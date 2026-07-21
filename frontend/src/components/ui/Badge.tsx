@@ -8,20 +8,26 @@ interface BadgeProps {
   size?: 'sm' | 'md';
 }
 
-const variantClasses: Record<BadgeVariant, string> = {
-  success: 'bg-primary-50 text-primary-600 border-primary-100',
-  warning: 'bg-warning-50 text-warning-500 border-warning-100',
-  danger: 'bg-danger-50 text-danger-500 border-danger-100',
-  info: 'bg-blue-50 text-blue-600 border-blue-100',
-  neutral: 'bg-surface-hover text-ink-muted border-border',
+const variantStyles: Record<BadgeVariant, { bg: string; color: string; border: string }> = {
+  success: { bg: 'rgba(15,110,92,0.1)',  color: '#0F6E5C', border: 'rgba(15,110,92,0.2)' },
+  warning: { bg: 'rgba(193,122,31,0.1)', color: '#C17A1F', border: 'rgba(193,122,31,0.2)' },
+  danger:  { bg: 'rgba(192,57,43,0.1)',  color: '#C0392B', border: 'rgba(192,57,43,0.2)' },
+  info:    { bg: 'rgba(29,78,216,0.1)',  color: '#1d4ed8', border: 'rgba(29,78,216,0.2)' },
+  neutral: { bg: '#F1F5F9',              color: '#64748B', border: '#E2E8F0' },
 };
 
-export const Badge: React.FC<BadgeProps> = ({ variant = 'neutral', children, size = 'sm' }) => (
-  <span className={`
-    inline-flex items-center rounded-full border font-medium
-    ${size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm'}
-    ${variantClasses[variant]}
-  `}>
-    {children}
-  </span>
-);
+export const Badge: React.FC<BadgeProps> = ({ variant = 'neutral', children, size = 'sm' }) => {
+  const v = variantStyles[variant];
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center',
+      borderRadius: 20, border: `1px solid ${v.border}`,
+      backgroundColor: v.bg, color: v.color,
+      fontSize: size === 'sm' ? 11 : 12, fontWeight: 600,
+      padding: size === 'sm' ? '2px 8px' : '4px 12px',
+      whiteSpace: 'nowrap',
+    }}>
+      {children}
+    </span>
+  );
+};

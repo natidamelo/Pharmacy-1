@@ -1,17 +1,22 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, X } from 'lucide-react';
 import { TopBar } from '../../components/layout/TopBar';
-import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { Modal, ConfirmModal } from '../../components/ui/Modal';
-import { PageLoader } from '../../components/ui/Spinner';
 import { BlistarStrip } from '../../components/ui/BlistarStrip';
 import { productsApi, batchesApi, stockMovementsApi } from '../../api/products';
 import type { Product, Batch } from '../../api/products';
 import { useAuthStore } from '../../store/authStore';
 import { format, differenceInDays } from 'date-fns';
 import toast from 'react-hot-toast';
+
+const inputStyle: React.CSSProperties = {
+  display: 'block', width: '100%', boxSizing: 'border-box',
+  border: '1.5px solid #E8EDE9', borderRadius: 10,
+  fontSize: 14, color: '#0D1117', backgroundColor: '#F9FAFB',
+  padding: '10px 14px', outline: 'none', transition: 'all 0.15s',
+  fontFamily: "'Inter', sans-serif",
+};
 
 export const InventoryDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,8 +48,8 @@ export const InventoryDetail: React.FC = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <><TopBar title="Product Detail" /><PageLoader /></>;
-  if (!product) return <div className="p-6 text-ink-muted">Product not found.</div>;
+  if (loading) return <><TopBar title="Product Detail" /><div style={{ padding: 48, textAlign: 'center', color: '#94A3B8' }}><Loader2 size={28} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />Loading product details…</div></>;
+  if (!product) return <div style={{ padding: 40, color: '#64748B' }}>Product not found.</div>;
 
   const now = new Date();
   const validBatches = product.batches ? product.batches.filter(b => b.quantityOnHand > 0) : [];
@@ -58,30 +63,39 @@ export const InventoryDetail: React.FC = () => {
     const days = differenceInDays(exp, now);
     if (days <= 30) return 'danger';
     if (days <= 90) return 'warning';
-    return 'good';
+    return 'valid';
   };
 
   const handleAddBatch = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
     setSaving(true);
     try {
-      await batchesApi.create({ ...batchForm, productId: product.id });
-      toast.success(`Batch ${batchForm.batchNumber} received`);
+      await batchesApi.create({
+        productId: id,
+        batchNumber: batchForm.batchNumber,
+        expiryDate: batchForm.expiryDate,
+        quantityOnHand: batchForm.quantityOnHand,
+        costPrice: batchForm.costPrice,
+        sellingPrice: batchForm.sellingPrice || undefined,
+      });
+      toast.success(`Batch ${batchForm.batchNumber} added`);
       setAddBatchOpen(false);
+      setBatchForm({ batchNumber: '', expiryDate: '', quantityOnHand: 0, costPrice: 0, sellingPrice: 0 });
       load();
     } catch { toast.error('Failed to add batch'); } finally { setSaving(false); }
   };
 
   const handleWriteOff = async () => {
-    if (!writeOffBatch) return;
+    if (!writeOffBatch || !id) return;
     setSaving(true);
     try {
       await stockMovementsApi.create({
-        productId: product.id,
+        productId: id,
         batchId: writeOffBatch.id,
         type: 'EXPIRED_WRITEOFF',
         quantity: writeOffBatch.quantityOnHand,
-        reason: `Write-off of expired batch ${writeOffBatch.batchNumber}`,
+        reason: 'Manual write-off of expired stock',
       });
       toast.success(`Batch ${writeOffBatch.batchNumber} written off`);
       setWriteOffBatch(null);
@@ -90,175 +104,211 @@ export const InventoryDetail: React.FC = () => {
   };
 
   return (
-    <div>
-      <TopBar title={product.name} subtitle={product.genericName || ''} />
-      <div className="p-6 space-y-6">
-        <div>
-          <Link to="/inventory" className="flex items-center gap-1 text-sm text-ink-muted hover:text-primary mb-4">
-            <ArrowLeft size={14} /> Back to inventory
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="card p-5 lg:col-span-2">
-            <h2 className="font-display font-semibold text-ink mb-4">Product details</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              {([
-                ['Generic name', product.genericName || '—'],
-                ['Brand name', product.brandName || '—'],
-                ['Category', product.category?.name || '—'],
-                ['Dosage form', product.dosageForm],
-                ['Strength', product.strength || '—'],
-                ['Barcode', product.barcode || '—'],
-                ['Unit', product.unitOfMeasure],
-                ['Reorder level', String(product.reorderLevel)],
-                ['Selling price', `ETB ${product.defaultSellingPrice.toFixed(2)}`],
-                ['Tax rate', `${(product.taxRate * 100).toFixed(0)}%`],
-              ] as [string, string][]).map(([label, value]) => (
-                <div key={label}>
-                  <div className="text-xs text-ink-subtle">{label}</div>
-                  <div className="font-medium text-ink font-mono">{value}</div>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2 mt-4">
-              {product.requiresPrescription && <Badge variant="warning">Rx Required</Badge>}
-              {product.isControlledSubstance && <Badge variant="danger">Controlled Substance</Badge>}
-            </div>
-          </div>
-
-          <div className="card p-5">
-            <h2 className="font-display font-semibold text-ink mb-4">Stock summary</h2>
-            <div className="text-4xl font-display font-bold text-ink tabular mb-1">{stockOnHand}</div>
-            <div className="text-sm text-ink-muted mb-4">units on hand</div>
-            <BlistarStrip batches={validBatches} />
+    <div style={{ backgroundColor: '#F5F7F6', minHeight: '100%' }}>
+      <TopBar
+        title={product.name}
+        subtitle={[product.genericName, product.dosageForm, product.strength].filter(Boolean).join(' · ')}
+        actions={
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Link to="/inventory" style={{ display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none', color: '#4A5568', fontSize: 13, fontWeight: 600, padding: '7px 14px', borderRadius: 10, border: '1.5px solid #E8EDE9', background: '#fff' }}>
+              <ArrowLeft size={14} /> Back
+            </Link>
             {canManage && (
-              <Button size="sm" className="mt-4 w-full" onClick={() => setAddBatchOpen(true)} id="add-batch-btn">
-                Receive stock
-              </Button>
+              <button
+                onClick={() => setAddBatchOpen(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #0F6E5C, #0d9488)', color: '#fff', fontSize: 13, fontWeight: 600, padding: '7px 16px', borderRadius: 10, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(15,110,92,0.3)' }}
+              >
+                <Plus size={14} /> Receive Batch
+              </button>
             )}
           </div>
-        </div>
+        }
+      />
 
-        <div className="card">
-          <div className="flex items-center justify-between p-5 border-b border-border">
-            <h2 className="font-display font-semibold text-ink">Batches</h2>
+      <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+        {/* Product Meta Card */}
+        <div style={{ backgroundColor: '#fff', borderRadius: 16, border: '1px solid #EEF2F0', padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 20 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Total Stock</div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#0D1117', fontFamily: "'Space Grotesk', sans-serif", marginTop: 4 }}>
+                {stockOnHand} <span style={{ fontSize: 14, fontWeight: 500, color: '#64748B' }}>{product.unitOfMeasure}</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Selling Price</div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#0F6E5C', fontFamily: "'Space Mono', monospace", marginTop: 4 }}>
+                ETB {product.defaultSellingPrice.toFixed(2)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Reorder Level</div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#0D1117', fontFamily: "'Space Mono', monospace", marginTop: 4 }}>
+                {product.reorderLevel}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Category</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#4A5568', marginTop: 8 }}>
+                {product.category?.name || '—'}
+              </div>
+            </div>
           </div>
-          {!product.batches || product.batches.length === 0 ? (
-            <div className="p-8 text-center text-sm text-ink-muted">No batches — receive stock to add the first batch.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead><tr><th>Batch #</th><th>Expiry</th><th>Qty on hand</th><th>Cost price</th><th>Selling price</th><th>Status</th>{canManage && <th></th>}</tr></thead>
-                <tbody>
-                  {product.batches.map(batch => {
-                    const status = getBatchStatus(batch);
-                    return (
-                      <tr key={batch.id}>
-                        <td className="font-mono text-xs">{batch.batchNumber}</td>
-                        <td className="tabular text-sm">{format(new Date(batch.expiryDate), 'dd MMM yyyy')}</td>
-                        <td className="tabular font-medium">{batch.quantityOnHand}</td>
-                        <td className="tabular">ETB {batch.costPrice.toFixed(2)}</td>
-                        <td className="tabular">ETB {(batch.sellingPrice ?? batch.costPrice).toFixed(2)}</td>
-                        <td>
-                          <Badge variant={status === 'expired' || status === 'danger' ? 'danger' : status === 'warning' ? 'warning' : 'success'}>
-                            {status === 'expired' ? 'Expired' : status === 'danger' ? '<30d' : status === 'warning' ? '<90d' : 'Good'}
-                          </Badge>
-                        </td>
-                        {canManage && (
-                          <td>
-                            {batch.quantityOnHand > 0 && (
-                              <button onClick={() => setWriteOffBatch(batch)}
-                                className="flex items-center gap-1 text-xs text-red-500 hover:underline focus-visible:outline-none"
-                                id={`writeoff-${batch.id}`}>
-                                <AlertTriangle size={12} /> Write off
-                              </button>
-                            )}
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+
+          {/* Badges */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid #EEF2F0' }}>
+            {product.requiresPrescription && <Badge variant="warning">Prescription Required (Rx)</Badge>}
+            {product.isControlledSubstance && <Badge variant="danger">Controlled Substance</Badge>}
+            {product.barcode && <Badge variant="neutral">Barcode: {product.barcode}</Badge>}
+          </div>
+
+          {/* FEFO Blister Strip */}
+          {validBatches.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #EEF2F0' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                FEFO Batch Sequence (Soonest Expiry First)
+              </div>
+              <BlistarStrip batches={validBatches} />
             </div>
           )}
         </div>
 
-        <div className="card">
-          <div className="p-5 border-b border-border">
-            <h2 className="font-display font-semibold text-ink">Stock movement history</h2>
+        {/* Batches Card */}
+        <div style={{ backgroundColor: '#fff', borderRadius: 16, border: '1px solid #EEF2F0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #EEF2F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0D1117', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Batches</h3>
+            <span style={{ fontSize: 12, color: '#64748B' }}>{product.batches?.length || 0} batches recorded</span>
+          </div>
+
+          {(!product.batches || product.batches.length === 0) ? (
+            <div style={{ padding: 36, textAlign: 'center', color: '#94A3B8', fontSize: 13 }}>No batches recorded for this product yet.</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#FAFBFA' }}>
+                  {['Batch Number', 'Expiry Date', 'Qty on Hand', 'Cost Price', 'Status', 'Actions'].map(h => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.6px', borderBottom: '1px solid #EEF2F0' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {product.batches.map(b => {
+                  const status = getBatchStatus(b);
+                  return (
+                    <tr key={b.id} style={{ borderBottom: '1px solid #F8FAFA' }}>
+                      <td style={{ padding: '12px 16px', fontSize: 13, fontFamily: "'Space Mono', monospace", fontWeight: 600, color: '#0D1117' }}>{b.batchNumber}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#4A5568' }}>{format(new Date(b.expiryDate), 'dd MMM yyyy')}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{b.quantityOnHand}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, fontFamily: "'Space Mono', monospace", color: '#64748B' }}>ETB {b.costPrice.toFixed(2)}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {status === 'expired' && <Badge variant="danger">Expired</Badge>}
+                        {status === 'danger' && <Badge variant="danger">&lt; 30d expiry</Badge>}
+                        {status === 'warning' && <Badge variant="warning">&lt; 90d expiry</Badge>}
+                        {status === 'valid' && <Badge variant="success">Valid</Badge>}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {canManage && status === 'expired' && b.quantityOnHand > 0 && (
+                          <button onClick={() => setWriteOffBatch(b)} style={{ fontSize: 12, color: '#C0392B', background: 'rgba(192,57,43,0.1)', border: 'none', padding: '4px 10px', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                            Write off
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Stock Movements Card */}
+        <div style={{ backgroundColor: '#fff', borderRadius: 16, border: '1px solid #EEF2F0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #EEF2F0' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0D1117', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Stock Movement History</h3>
           </div>
           {movements.length === 0 ? (
-            <div className="p-8 text-center text-sm text-ink-muted">No stock movements recorded yet.</div>
+            <div style={{ padding: 36, textAlign: 'center', color: '#94A3B8', fontSize: 13 }}>No stock movement records for this product yet.</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead><tr><th>Date</th><th>Type</th><th>Qty</th><th>Batch</th><th>Reason</th></tr></thead>
-                <tbody>
-                  {movements.map((m) => (
-                    <tr key={m.id as string}>
-                      <td className="tabular text-xs text-ink-muted">{format(new Date(m.createdAt as string), 'dd MMM yyyy HH:mm')}</td>
-                      <td><Badge variant={String(m.type).includes('IN') || String(m.type).includes('RETURN') ? 'success' : 'danger'}>{m.type as string}</Badge></td>
-                      <td className="tabular font-medium">{m.quantity as number}</td>
-                      <td className="font-mono text-xs">{(m.batch as Record<string, unknown>)?.batchNumber as string || '—'}</td>
-                      <td className="text-ink-muted">{(m.reason as string) || '—'}</td>
-                    </tr>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#FAFBFA' }}>
+                  {['Date', 'Type', 'Qty', 'Reason'].map(h => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.6px', borderBottom: '1px solid #EEF2F0' }}>{h}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </tr>
+              </thead>
+              <tbody>
+                {movements.map(m => (
+                  <tr key={m.id as string} style={{ borderBottom: '1px solid #F8FAFA' }}>
+                    <td style={{ padding: '11px 16px', fontSize: 12, color: '#64748B' }}>{format(new Date(m.createdAt as string), 'dd MMM yyyy HH:mm')}</td>
+                    <td style={{ padding: '11px 16px' }}><Badge variant="neutral">{m.type as string}</Badge></td>
+                    <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{m.quantity as number}</td>
+                    <td style={{ padding: '11px 16px', fontSize: 12, color: '#64748B' }}>{(m.reason as string) || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       </div>
 
-      <Modal open={addBatchOpen} onClose={() => setAddBatchOpen(false)} title="Receive stock" size="md"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setAddBatchOpen(false)}>Cancel</Button>
-            <Button loading={saving} onClick={handleAddBatch} id="save-batch-btn">Receive stock</Button>
-          </>
-        }
-      >
-        <form onSubmit={handleAddBatch} className="space-y-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="batch-number" className="text-sm font-medium text-ink">Batch number <span className="text-red-500">*</span></label>
-            <input id="batch-number" required value={batchForm.batchNumber} onChange={e => setBatchForm(f => ({ ...f, batchNumber: e.target.value }))}
-              className="rounded-lg border border-border px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="expiry-date" className="text-sm font-medium text-ink">Expiry date <span className="text-red-500">*</span></label>
-            <input id="expiry-date" type="date" required value={batchForm.expiryDate} onChange={e => setBatchForm(f => ({ ...f, expiryDate: e.target.value }))}
-              className="rounded-lg border border-border px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="batch-qty" className="text-sm font-medium text-ink">Quantity</label>
-            <input id="batch-qty" type="number" value={batchForm.quantityOnHand} onChange={e => setBatchForm(f => ({ ...f, quantityOnHand: Number(e.target.value) }))}
-              className="rounded-lg border border-border px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="cost-price" className="text-sm font-medium text-ink">Cost price (ETB)</label>
-            <input id="cost-price" type="number" step="0.01" min={0} value={batchForm.costPrice} onChange={e => setBatchForm(f => ({ ...f, costPrice: Number(e.target.value) }))}
-              className="rounded-lg border border-border px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="batch-selling-price" className="text-sm font-medium text-ink">Selling price (ETB)</label>
-            <input id="batch-selling-price" type="number" step="0.01" min={0} value={batchForm.sellingPrice} onChange={e => setBatchForm(f => ({ ...f, sellingPrice: Number(e.target.value) }))}
-              className="rounded-lg border border-border px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
-          </div>
-        </form>
-      </Modal>
+      {/* Add Batch Modal */}
+      {addBatchOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setAddBatchOpen(false)}>
+          <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #EEF2F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #0F6E5C, #0d9488)' }}>
+              <div>
+                <h2 style={{ color: '#fff', fontSize: 17, fontWeight: 700, margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Receive New Batch</h2>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, margin: '2px 0 0' }}>Add batch inventory for {product.name}</p>
+              </div>
+              <button onClick={() => setAddBatchOpen(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', color: '#fff' }}><X size={16} /></button>
+            </div>
 
-      <ConfirmModal
-        open={!!writeOffBatch}
-        onClose={() => setWriteOffBatch(null)}
-        onConfirm={handleWriteOff}
-        loading={saving}
-        title="Write off batch"
-        message={writeOffBatch ? `Write off batch "${writeOffBatch.batchNumber}"? This will remove ${writeOffBatch.quantityOnHand} units from stock. This action cannot be undone.` : ''}
-        confirmLabel="Write off batch"
-        variant="danger"
-      />
+            <form onSubmit={handleAddBatch} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label htmlFor="b-num" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Batch Number *</label>
+                <input id="b-num" required placeholder="e.g. BATCH-2026-001" value={batchForm.batchNumber} onChange={e => setBatchForm(b => ({ ...b, batchNumber: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label htmlFor="b-exp" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Expiry Date *</label>
+                <input id="b-exp" type="date" required value={batchForm.expiryDate} onChange={e => setBatchForm(b => ({ ...b, expiryDate: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label htmlFor="b-qty" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Quantity Received *</label>
+                <input id="b-qty" type="number" min="1" required value={batchForm.quantityOnHand} onChange={e => setBatchForm(b => ({ ...b, quantityOnHand: Number(e.target.value) }))} style={inputStyle} />
+              </div>
+              <div>
+                <label htmlFor="b-cost" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Cost Price (ETB) *</label>
+                <input id="b-cost" type="number" step="0.01" min="0" required value={batchForm.costPrice} onChange={e => setBatchForm(b => ({ ...b, costPrice: Number(e.target.value) }))} style={inputStyle} />
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                <button type="button" onClick={() => setAddBatchOpen(false)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: '1.5px solid #E8EDE9', background: '#fff', color: '#4A5568', fontSize: 14, fontWeight: 600 }}>Cancel</button>
+                <button type="submit" disabled={saving} style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', border: 'none', background: saving ? '#9CA3AF' : 'linear-gradient(135deg, #0F6E5C, #0d9488)', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: saving ? 'none' : '0 4px 14px rgba(15,110,92,0.35)', fontFamily: "'Space Grotesk', sans-serif" }}>
+                  {saving ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Saving…</> : <><Plus size={15} /> Save Batch</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Write Off Modal */}
+      {writeOffBatch && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setWriteOffBatch(null)}>
+          <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden', padding: 24 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#C0392B', margin: '0 0 8px', fontFamily: "'Space Grotesk', sans-serif" }}>Write Off Batch?</h3>
+            <p style={{ fontSize: 14, color: '#4A5568', margin: '0 0 20px', lineHeight: 1.5 }}>
+              Are you sure you want to write off batch <strong>{writeOffBatch.batchNumber}</strong> ({writeOffBatch.quantityOnHand} units)? This will remove it from inventory stock.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setWriteOffBatch(null)} style={{ flex: 1, padding: '10px', borderRadius: 10, cursor: 'pointer', border: '1.5px solid #E8EDE9', background: '#fff', color: '#4A5568', fontSize: 14, fontWeight: 600 }}>Cancel</button>
+              <button onClick={handleWriteOff} disabled={saving} style={{ flex: 1, padding: '10px', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', border: 'none', background: 'linear-gradient(135deg, #C0392B, #e74c3c)', color: '#fff', fontSize: 14, fontWeight: 700 }}>Write Off</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

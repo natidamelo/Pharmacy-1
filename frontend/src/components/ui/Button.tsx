@@ -9,34 +9,36 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<string, React.CSSProperties> = {
-  primary:   { backgroundColor: '#0F6E5C', color: '#ffffff', border: 'none', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' },
-  secondary: { backgroundColor: '#ffffff', color: '#15191C', border: '1px solid #DDE4E2', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
-  danger:    { backgroundColor: '#C0392B', color: '#ffffff', border: 'none', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' },
-  warning:   { backgroundColor: '#C17A1F', color: '#ffffff', border: 'none', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' },
+  primary:   { background: 'linear-gradient(135deg, #0F6E5C 0%, #0d9488 100%)', color: '#ffffff', border: 'none', boxShadow: '0 4px 12px rgba(15,110,92,0.3)' },
+  secondary: { backgroundColor: '#ffffff', color: '#0D1117', border: '1.5px solid #E8EDE9', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
+  danger:    { background: 'linear-gradient(135deg, #C0392B 0%, #e74c3c 100%)', color: '#ffffff', border: 'none', boxShadow: '0 4px 12px rgba(192,57,43,0.3)' },
+  warning:   { background: 'linear-gradient(135deg, #C17A1F 0%, #f39c12 100%)', color: '#ffffff', border: 'none', boxShadow: '0 4px 12px rgba(193,122,31,0.3)' },
   ghost:     { backgroundColor: 'transparent', color: '#4A5568', border: 'none' },
 };
 
-const sizeClasses = {
-  sm: 'px-3 py-1.5 text-xs rounded-lg gap-1.5',
-  md: 'px-4 py-2 text-sm rounded-lg gap-2',
-  lg: 'px-5 py-2.5 text-base rounded-xl gap-2',
+const sizeStyles: Record<string, React.CSSProperties> = {
+  sm: { padding: '6px 12px', fontSize: 12, borderRadius: 8, gap: 6 },
+  md: { padding: '9px 16px', fontSize: 13, borderRadius: 10, gap: 7 },
+  lg: { padding: '12px 22px', fontSize: 15, borderRadius: 12, gap: 8 },
 };
 
 export const Button: React.FC<ButtonProps> = ({
-  variant = 'primary', size = 'md', loading = false, icon, children, className = '', disabled, style, ...props
+  variant = 'primary', size = 'md', loading = false, icon, children, disabled, style, ...props
 }) => (
   <button
     {...props}
     disabled={disabled || loading}
-    style={{ ...variantStyles[variant], ...style }}
-    className={`
-      inline-flex items-center justify-center font-medium transition-all duration-150 cursor-pointer
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-      disabled:opacity-50 disabled:cursor-not-allowed
-      ${sizeClasses[size]} ${className}
-    `}
+    style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      fontWeight: 600, cursor: (disabled || loading) ? 'not-allowed' : 'pointer',
+      opacity: (disabled || loading) ? 0.6 : 1, transition: 'all 0.15s ease',
+      fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.1px',
+      ...variantStyles[variant],
+      ...sizeStyles[size],
+      ...style,
+    }}
   >
-    {loading ? <Loader2 className="animate-spin" size={14} /> : icon}
+    {loading ? <Loader2 size={size === 'sm' ? 12 : size === 'lg' ? 16 : 14} style={{ animation: 'spin 1s linear infinite' }} /> : icon}
     {children}
   </button>
 );
