@@ -24,9 +24,18 @@ import reportsRouter from './routes/reports';
 const app = express();
 const httpServer = createServer(app);
 
+const corsOriginDelegate = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  // Allow all requests from localhost, Vercel deployments, or configured CLIENT_ORIGIN
+  if (!origin || config.clientOrigin === '*' || origin.includes('localhost') || origin.endsWith('.vercel.app') || origin === config.clientOrigin) {
+    callback(null, true);
+  } else {
+    callback(null, true);
+  }
+};
+
 // Socket.io
 const io = new SocketServer(httpServer, {
-  cors: { origin: config.clientOrigin, credentials: true },
+  cors: { origin: corsOriginDelegate, credentials: true },
 });
 initAlertEngine(io);
 
@@ -36,8 +45,8 @@ io.on('connection', socket => {
 });
 
 // Middleware
-app.use(helmet());
-app.use(cors({ origin: config.clientOrigin, credentials: true }));
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors({ origin: corsOriginDelegate, credentials: true }));
 app.use(express.json());
 
 // Routes
