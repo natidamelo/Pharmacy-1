@@ -10,6 +10,7 @@ export interface SaleItem {
 export interface CreateSalePayload {
   customerId?: string;
   prescriptionId?: string;
+  overridePrescription?: boolean;
   paymentMethod: 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'INSURANCE';
   discountAmount?: number;
   notes?: string;

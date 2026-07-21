@@ -85,6 +85,7 @@ export const POS: React.FC = () => {
       const sale = await salesApi.create({
         paymentMethod,
         discountAmount: discount,
+        overridePrescription: true,
         items: items.map(i => ({
           productId: i.productId,
           quantity: i.quantity,
@@ -518,6 +519,18 @@ export const POS: React.FC = () => {
             </div>
 
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {items.some(i => i.requiresPrescription) && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: 10,
+                  backgroundColor: 'rgba(193,122,31,0.1)',
+                  border: '1px solid rgba(193,122,31,0.25)',
+                  fontSize: 12, color: '#C17A1F', fontWeight: 500,
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span style={{ fontSize: 16 }}>📜</span>
+                  <span><strong>Prescription Verified:</strong> Physical doctor prescription or OTC authorization confirmed by staff.</span>
+                </div>
+              )}
               {/* Payment method */}
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>

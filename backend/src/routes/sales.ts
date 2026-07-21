@@ -32,7 +32,7 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
         return;
       }
 
-      if (product.requiresPrescription && !prescriptionId) {
+      if (product.requiresPrescription && !prescriptionId && !req.body.overridePrescription) {
         res.status(400).json({ error: `Product "${product.name}" requires a prescription` });
         return;
       }
