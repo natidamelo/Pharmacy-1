@@ -7,7 +7,8 @@ export interface AppError extends Error {
 }
 
 export const errorHandler = (err: AppError, req: Request, res: Response, _next: NextFunction): void => {
-  console.error('[Error]', err.message, err.stack);
+  console.error(`[API Error] ${req.method} ${req.originalUrl}:`, err.message);
+  if (err.stack) console.error('[Stack]:', err.stack);
 
   if (err instanceof ZodError) {
     res.status(400).json({

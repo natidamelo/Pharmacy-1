@@ -11,9 +11,10 @@ router.get('/sales', async (req: Request, res: Response, next: NextFunction) => 
     const { from, to } = req.query as Record<string, string>;
     const where: Record<string, unknown> = { status: 'COMPLETED' };
     if (from || to) {
-      where.createdAt = {};
-      if (from) (where.createdAt as Record<string, Date>).gte = new Date(from);
-      if (to) (where.createdAt as Record<string, Date>).lte = new Date(to);
+      const createdAtFilter: Record<string, Date> = {};
+      if (from && !isNaN(Date.parse(from))) createdAtFilter.gte = new Date(from);
+      if (to && !isNaN(Date.parse(to))) createdAtFilter.lte = new Date(to);
+      if (Object.keys(createdAtFilter).length > 0) where.createdAt = createdAtFilter;
     }
     const sales = await prisma.sale.findMany({
       where,
@@ -59,9 +60,10 @@ router.get('/profit-margin', async (req: Request, res: Response, next: NextFunct
     const { from, to } = req.query as Record<string, string>;
     const where: Record<string, unknown> = { status: 'COMPLETED' };
     if (from || to) {
-      where.createdAt = {};
-      if (from) (where.createdAt as Record<string, Date>).gte = new Date(from);
-      if (to) (where.createdAt as Record<string, Date>).lte = new Date(to);
+      const createdAtFilter: Record<string, Date> = {};
+      if (from && !isNaN(Date.parse(from))) createdAtFilter.gte = new Date(from);
+      if (to && !isNaN(Date.parse(to))) createdAtFilter.lte = new Date(to);
+      if (Object.keys(createdAtFilter).length > 0) where.createdAt = createdAtFilter;
     }
     const sales = await prisma.sale.findMany({
       where,
@@ -71,7 +73,7 @@ router.get('/profit-margin', async (req: Request, res: Response, next: NextFunct
     for (const sale of sales) {
       revenue += sale.totalAmount;
       for (const item of sale.items) {
-        cost += item.quantity * item.batch.costPrice;
+        cost += item.quantity * (item.batch?.costPrice || 0);
       }
     }
     const profit = revenue - cost;
