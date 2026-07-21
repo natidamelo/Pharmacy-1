@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, FileText, Loader2, X } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, X, UserPlus } from 'lucide-react';
 import { TopBar } from '../components/layout/TopBar';
 import { Badge } from '../components/ui/Badge';
 import { prescriptionsApi } from '../api/prescriptions';
@@ -31,9 +31,14 @@ export const Prescriptions: React.FC = () => {
 
   // Modals
   const [addOpen, setAddOpen] = useState(false);
+  const [quickCustomerOpen, setQuickCustomerOpen] = useState(false);
   const [viewItem, setViewItem] = useState<Record<string, unknown> | null>(null);
 
-  // Form states
+  // Quick Customer Form
+  const [custForm, setCustForm] = useState({ name: '', phone: '', email: '', allergyNotes: '' });
+  const [savingCust, setSavingCust] = useState(false);
+
+  // Prescription Form states
   const [customers, setCustomers] = useState<Record<string, unknown>[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [saving, setSaving] = useState(false);
@@ -65,14 +70,40 @@ export const Prescriptions: React.FC = () => {
     }
   }, [search, statusFilter]);
 
+  const loadCustomers = useCallback(async () => {
+    try {
+      const res = await customersApi.list();
+      setCustomers(res.data || []);
+    } catch { setCustomers([]); }
+  }, []);
+
   useEffect(() => { loadPrescriptions(); }, [loadPrescriptions]);
 
   useEffect(() => {
     if (addOpen) {
-      customersApi.list().then(r => setCustomers(r.data || [])).catch(() => {});
+      loadCustomers();
       productsApi.list({ pageSize: '100' }).then(r => setProducts(r.data || [])).catch(() => {});
     }
-  }, [addOpen]);
+  }, [addOpen, loadCustomers]);
+
+  const handleQuickAddCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingCust(true);
+    try {
+      const newCust = await customersApi.create(custForm);
+      toast.success(`Customer "${custForm.name}" registered`);
+      setQuickCustomerOpen(false);
+      setCustForm({ name: '', phone: '', email: '', allergyNotes: '' });
+      await loadCustomers();
+      if (newCust && newCust.id) {
+        setForm(f => ({ ...f, customerId: newCust.id }));
+      }
+    } catch {
+      toast.error('Failed to add customer');
+    } finally {
+      setSavingCust(false);
+    }
+  };
 
   const handleAddItem = () => {
     setItems(prev => [...prev, { productId: '', dosageInstructions: '1 tablet 3x daily after meals', quantityPrescribed: 10 }]);
@@ -265,7 +296,21 @@ export const Prescriptions: React.FC = () => {
             <form onSubmit={handleCreate} style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
               {/* Customer */}
               <div>
-                <label htmlFor="rx-customer" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Select Customer *</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                  <label htmlFor="rx-customer" style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Select Customer *</label>
+                  <button
+                    type="button"
+                    onClick={() => setQuickCustomerOpen(true)}
+                    style={{
+                      fontSize: 12, color: '#0F6E5C', background: 'rgba(15,110,92,0.08)',
+                      border: '1px solid rgba(15,110,92,0.2)', borderRadius: 8,
+                      padding: '3px 10px', cursor: 'pointer', fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}
+                  >
+                    <UserPlus size={13} /> + Quick Add Customer
+                  </button>
+                </div>
                 <select id="rx-customer" required value={form.customerId} onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
                   <option value="">Select a registered customer…</option>
                   {customers.map(c => <option key={c.id as string} value={c.id as string}>{c.name as string} ({(c.phone as string) || 'No phone'})</option>)}
@@ -358,6 +403,47 @@ export const Prescriptions: React.FC = () => {
                 <button type="button" onClick={() => setAddOpen(false)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: '1.5px solid #E8EDE9', background: '#fff', color: '#4A5568', fontSize: 14, fontWeight: 600 }}>Cancel</button>
                 <button type="submit" disabled={saving} id="save-rx-btn" style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', border: 'none', background: saving ? '#9CA3AF' : 'linear-gradient(135deg, #0F6E5C, #0d9488)', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: saving ? 'none' : '0 4px 14px rgba(15,110,92,0.35)', fontFamily: "'Space Grotesk', sans-serif" }}>
                   {saving ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Saving…</> : <><FileText size={15} /> Save Prescription</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Quick Add Customer Sub-Modal ── */}
+      {quickCustomerOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setQuickCustomerOpen(false)}>
+          <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #EEF2F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #0F6E5C, #0d9488)' }}>
+              <div>
+                <h2 style={{ color: '#fff', fontSize: 17, fontWeight: 700, margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Quick Add Customer</h2>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, margin: '2px 0 0' }}>Register customer & select for prescription</p>
+              </div>
+              <button onClick={() => setQuickCustomerOpen(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', color: '#fff' }}><X size={16} /></button>
+            </div>
+
+            <form onSubmit={handleQuickAddCustomer} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label htmlFor="q-cust-name" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Full Name *</label>
+                <input id="q-cust-name" required placeholder="e.g. Abebe Bekele" value={custForm.name} onChange={e => setCustForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label htmlFor="q-cust-phone" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Phone Number</label>
+                <input id="q-cust-phone" placeholder="+251 9xx xxx xxx" value={custForm.phone} onChange={e => setCustForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label htmlFor="q-cust-email" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Email Address</label>
+                <input id="q-cust-email" type="email" placeholder="example@gmail.com" value={custForm.email} onChange={e => setCustForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label htmlFor="q-cust-allergies" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Allergy Notes</label>
+                <textarea id="q-cust-allergies" rows={2} placeholder="Known drug allergies…" value={custForm.allergyNotes} onChange={e => setCustForm(f => ({ ...f, allergyNotes: e.target.value }))} style={{ ...inputStyle, resize: 'none' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+                <button type="button" onClick={() => setQuickCustomerOpen(false)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: '1.5px solid #E8EDE9', background: '#fff', color: '#4A5568', fontSize: 14, fontWeight: 600 }}>Cancel</button>
+                <button type="submit" disabled={savingCust} style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: savingCust ? 'not-allowed' : 'pointer', border: 'none', background: savingCust ? '#9CA3AF' : 'linear-gradient(135deg, #0F6E5C, #0d9488)', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: savingCust ? 'none' : '0 4px 14px rgba(15,110,92,0.35)', fontFamily: "'Space Grotesk', sans-serif" }}>
+                  {savingCust ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Registering…</> : <><UserPlus size={15} /> Add & Select</>}
                 </button>
               </div>
             </form>
