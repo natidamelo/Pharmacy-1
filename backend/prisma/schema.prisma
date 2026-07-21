@@ -1,0 +1,290 @@
+// This is your Prisma schema file — MongoDB provider
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PHARMACIST
+  CASHIER
+  INVENTORY_CLERK
+}
+
+enum DosageForm {
+  TABLET
+  CAPSULE
+  SYRUP
+  INJECTION
+  CREAM
+  DROPS
+  INHALER
+  OTHER
+}
+
+enum MovementType {
+  PURCHASE_IN
+  SALE_OUT
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  TRANSFER_IN
+  TRANSFER_OUT
+  RETURN_IN
+  EXPIRED_WRITEOFF
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE_MONEY
+  INSURANCE
+}
+
+enum PrescriptionStatus {
+  PENDING
+  PARTIALLY_DISPENSED
+  FULLY_DISPENSED
+  CANCELLED
+}
+
+enum POStatus {
+  DRAFT
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  phone        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Branch {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  address   String?
+  phone     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Settings {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  key         String  @unique
+  value       String
+  description String?
+}
+
+model Category {
+  id       String     @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  parentId String?    @db.ObjectId
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Category[] @relation("CategoryTree")
+  products Product[]
+}
+
+model Product {
+  id                    String      @id @default(auto()) @map("_id") @db.ObjectId
+  name                  String
+  genericName           String?
+  brandName             String?
+  categoryId            String      @db.ObjectId
+  category              Category    @relation(fields: [categoryId], references: [id])
+  dosageForm            DosageForm
+  strength              String?
+  manufacturer          String?
+  barcode               String?     @unique
+  unitOfMeasure         String
+  packSize              Int         @default(1)
+  reorderLevel          Int         @default(10)
+  isControlledSubstance Boolean     @default(false)
+  requiresPrescription  Boolean     @default(false)
+  defaultSellingPrice   Float
+  taxRate               Float       @default(0)
+  efdaRegistrationNo    String?
+  active                Boolean     @default(true)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  batches               Batch[]
+  stockMovements        StockMovement[]
+  saleItems             SaleItem[]
+  prescriptionItems     PrescriptionItem[]
+  purchaseOrderItems    PurchaseOrderItem[]
+
+  @@index([name])
+}
+
+model Batch {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  productId      String    @db.ObjectId
+  product        Product   @relation(fields: [productId], references: [id])
+  batchNumber    String
+  expiryDate     DateTime
+  quantityOnHand Int
+  costPrice      Float
+  sellingPrice   Float?
+  supplierId     String?   @db.ObjectId
+  supplier       Supplier? @relation(fields: [supplierId], references: [id])
+  receivedDate   DateTime  @default(now())
+  stockMovements StockMovement[]
+  saleItems      SaleItem[]
+
+  @@index([expiryDate])
+  @@index([productId])
+}
+
+model StockMovement {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String       @db.ObjectId
+  product     Product      @relation(fields: [productId], references: [id])
+  batchId     String?      @db.ObjectId
+  batch       Batch?       @relation(fields: [batchId], references: [id])
+  type        MovementType
+  quantity    Int
+  referenceId String?
+  reason      String?
+  performedBy String
+  createdAt   DateTime     @default(now())
+
+  @@index([productId])
+  @@index([createdAt])
+}
+
+model Customer {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  phone         String?
+  email         String?
+  allergyNotes  String?
+  createdAt     DateTime       @default(now())
+  sales         Sale[]
+  prescriptions Prescription[]
+}
+
+model Prescription {
+  id                  String              @id @default(auto()) @map("_id") @db.ObjectId
+  customerId          String              @db.ObjectId
+  customer            Customer            @relation(fields: [customerId], references: [id])
+  prescriberName      String
+  prescriberLicenseNo String?
+  dateIssued          DateTime
+  status              PrescriptionStatus  @default(PENDING)
+  notes               String?
+  createdBy           String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  items               PrescriptionItem[]
+  sales               Sale[]
+}
+
+model PrescriptionItem {
+  id                 String       @id @default(auto()) @map("_id") @db.ObjectId
+  prescriptionId     String       @db.ObjectId
+  prescription       Prescription @relation(fields: [prescriptionId], references: [id])
+  productId          String       @db.ObjectId
+  product            Product      @relation(fields: [productId], references: [id])
+  dosageInstructions String
+  quantityPrescribed Int
+  quantityDispensed  Int          @default(0)
+}
+
+model Sale {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  saleNumber     String        @unique
+  customerId     String?       @db.ObjectId
+  customer       Customer?     @relation(fields: [customerId], references: [id])
+  cashierId      String
+  prescriptionId String?       @db.ObjectId
+  prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
+  subtotal       Float
+  discountAmount Float         @default(0)
+  taxAmount      Float         @default(0)
+  totalAmount    Float
+  paymentMethod  PaymentMethod
+  status         String        @default("COMPLETED")
+  notes          String?
+  createdAt      DateTime      @default(now())
+  items          SaleItem[]
+
+  @@index([createdAt])
+  @@index([cashierId])
+}
+
+model SaleItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  saleId    String  @db.ObjectId
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  productId String  @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  batchId   String  @db.ObjectId
+  batch     Batch   @relation(fields: [batchId], references: [id])
+  quantity  Int
+  unitPrice Float
+  discount  Float   @default(0)
+  lineTotal Float
+}
+
+model Supplier {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  contactPerson  String?
+  phone          String?
+  email          String?
+  address        String?
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  batches        Batch[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id           String              @id @default(auto()) @map("_id") @db.ObjectId
+  poNumber     String              @unique
+  supplierId   String              @db.ObjectId
+  supplier     Supplier            @relation(fields: [supplierId], references: [id])
+  status       POStatus            @default(DRAFT)
+  expectedDate DateTime?
+  createdBy    String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  items        PurchaseOrderItem[]
+}
+
+model PurchaseOrderItem {
+  id               String        @id @default(auto()) @map("_id") @db.ObjectId
+  purchaseOrderId  String        @db.ObjectId
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  productId        String        @db.ObjectId
+  product          Product       @relation(fields: [productId], references: [id])
+  quantityOrdered  Int
+  quantityReceived Int           @default(0)
+  unitCost         Float
+}
+
+model AuditLog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+}
