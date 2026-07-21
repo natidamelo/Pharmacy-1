@@ -1,30 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Space+Mono&display=swap');
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────
+   Tailwind v4 Custom Theme Tokens
+   These generate utility classes like bg-primary, text-ink, etc.
+   ───────────────────────────────────────────── */
 @theme {
-  --color-bg: #F5F7F6;
-  --color-ink: #15191C;
-  --color-primary: #0F6E5C;
-  --color-warning: #C17A1F;
-  --color-danger: #C0392B;
-  --color-border: #DDE4E2;
-  --color-surface: #FFFFFF;
-  --color-surface-hover: #F8FAF9;
-  --color-ink-muted: #4A5568;
-  --color-ink-subtle: #718096;
+  --color-bg:           #F5F7F6;
+  --color-ink:          #15191C;
+  --color-ink-muted:    #4A5568;
+  --color-ink-subtle:   #718096;
+  --color-primary:      #0F6E5C;
+  --color-primary-dark: #0a5245;
+  --color-warning:      #C17A1F;
+  --color-danger:       #C0392B;
+  --color-danger-light: #a93226;
+  --color-border:       #DDE4E2;
+  --color-surface:      #FFFFFF;
+  --color-surface-hover:#F8FAF9;
+
   --font-display: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-mono: 'Space Mono', monospace;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'Space Mono', monospace;
 }
 
+/* ─────────────────────────────────────────────
+   Base Reset
+   ───────────────────────────────────────────── */
 @layer base {
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
+
   body {
     background-color: #F5F7F6;
     color: #15191C;
     font-family: 'Inter', sans-serif;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   :focus-visible {
@@ -32,18 +45,30 @@
     outline-offset: 2px;
     border-radius: 4px;
   }
+
+  /* Ensure full-height layout */
+  html, body, #root {
+    height: 100%;
+    min-height: 100vh;
+  }
+
+  #root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    text-align: left;
+    border: none;
+  }
 }
 
-.tabular { font-family: 'Space Mono', monospace; font-variant-numeric: tabular-nums; }
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
+/* ─────────────────────────────────────────────
+   Utility / Component Classes
+   ───────────────────────────────────────────── */
+.tabular {
+  font-family: 'Space Mono', monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .card {
@@ -62,10 +87,17 @@
   gap: 1rem;
 }
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
+
+.data-table { width: 100%; border-collapse: collapse; }
 
 .data-table th {
   padding: 0.75rem 1rem;
@@ -83,8 +115,22 @@
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   border-bottom: 1px solid #DDE4E2;
+  color: #15191C;
 }
 
-.data-table tr:hover td {
-  background-color: #f8faf9;
+.data-table tr:hover td { background-color: #f8faf9; }
+
+/* ─── Explicit .btn-primary so it always works even if Tailwind tokens don't resolve ─── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0F6E5C;
+  color: #ffffff !important;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
 }
+.btn-primary:hover { background-color: #0a5245; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
