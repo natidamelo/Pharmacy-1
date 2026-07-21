@@ -40,16 +40,19 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-60 bg-[#15191C] text-white flex flex-col h-screen sticky top-0 flex-shrink-0 shadow-lg">
+    <aside
+      className="w-60 flex flex-col h-screen sticky top-0 flex-shrink-0 z-30 shadow-xl"
+      style={{ backgroundColor: '#15191C', color: '#ffffff' }}
+    >
       {/* Logo */}
       <div className="p-5 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-[#0F6E5C] rounded-lg flex items-center justify-center shadow">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow" style={{ backgroundColor: '#0F6E5C' }}>
             <Pill size={16} className="text-white" />
           </div>
           <div>
-            <div className="text-white font-display font-bold text-sm leading-tight">PharmaSys</div>
-            <div className="text-white/40 text-[10px]">Management System</div>
+            <div className="text-white font-bold text-sm leading-tight font-display">PharmaSys</div>
+            <div className="text-white/50 text-[10px]">Management System</div>
           </div>
         </div>
       </div>
@@ -64,13 +67,14 @@ export const Sidebar: React.FC = () => {
             <NavLink
               key={item.to}
               to={item.to}
+              style={({ isActive }) => ({
+                backgroundColor: isActive ? '#0F6E5C' : 'transparent',
+                color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
+              })}
               className={({ isActive }) => `
                 flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl mb-1 text-sm
-                transition-all duration-150 group font-medium
-                ${isActive
-                  ? 'bg-[#0F6E5C] text-white shadow'
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
-                }
+                transition-all duration-150 font-medium
+                ${isActive ? 'shadow font-semibold' : 'hover:text-white hover:bg-white/10'}
               `}
             >
               <span className="flex items-center gap-3">
@@ -78,7 +82,10 @@ export const Sidebar: React.FC = () => {
                 {item.label}
               </span>
               {badge > 0 && (
-                <span className="bg-[#C17A1F] text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[18px] text-center">
+                <span
+                  className="text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[18px] text-center"
+                  style={{ backgroundColor: '#C17A1F' }}
+                >
                   {badge > 99 ? '99+' : badge}
                 </span>
               )}
@@ -90,7 +97,10 @@ export const Sidebar: React.FC = () => {
       {/* User + Logout */}
       <div className="p-4 border-t border-white/10">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-[#0F6E5C] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+            style={{ backgroundColor: '#0F6E5C' }}
+          >
             {user?.name?.charAt(0).toUpperCase()}
           </div>
           <div className="overflow-hidden">
