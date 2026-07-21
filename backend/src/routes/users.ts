@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma';
+import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
 import { validate } from '../middleware/validate';
 import { createUserSchema, updateUserSchema } from '../schemas/user.schema';
@@ -9,7 +10,7 @@ import { Role } from '@prisma/client';
 
 const router = Router();
 
-router.use(requireRole('ADMIN'));
+router.use(authenticate, requireRole('ADMIN'));
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {

@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma';
+import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
 import { validate } from '../middleware/validate';
 import { createSaleSchema } from '../schemas/sale.schema';
@@ -10,6 +11,7 @@ import { emitAlerts } from '../services/alertEngine';
 import { parsePagination, paginatedResponse } from '../utils/pagination';
 
 const router = Router();
+router.use(authenticate);
 
 // POST /api/sales — Create POS Sale with FEFO resolution
 router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createSaleSchema), async (req: Request, res: Response, next: NextFunction) => {
@@ -17,7 +19,6 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
     const { customerId, prescriptionId, paymentMethod, discountAmount = 0, notes, items } = req.body;
     const cashierId = req.user!.userId;
 
-    // Resolve FEFO allocations for all items
     const allocations: Array<{
       item: { productId: string; quantity: number; unitPrice: number; discount: number };
       product: { id: string; name: string; requiresPrescription: boolean; isControlledSubstance: boolean; taxRate: number };
@@ -31,7 +32,6 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
         return;
       }
 
-      // Enforce Rx check if required
       if (product.requiresPrescription && !prescriptionId) {
         res.status(400).json({ error: `Product "${product.name}" requires a prescription` });
         return;
@@ -41,7 +41,6 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
       allocations.push({ item, product, batchAllocations });
     }
 
-    // Calculate totals
     let subtotal = 0;
     let taxAmount = 0;
 
@@ -54,7 +53,6 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
     const totalAmount = Math.max(0, subtotal + taxAmount - discountAmount);
     const saleNumber = await generateSaleNumber();
 
-    // Prepare sale items and stock movement data
     const saleItemsData: Array<{
       productId: string;
       batchId: string;
@@ -97,7 +95,6 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
       }
     }
 
-    // Create Sale
     const sale = await prisma.sale.create({
       data: {
         saleNumber,
@@ -118,19 +115,16 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
       },
     });
 
-    // Decrement batches
     await Promise.all(
       batchUpdates.map(u =>
         prisma.batch.update({ where: { id: u.id }, data: { quantityOnHand: { decrement: u.decrement } } })
       )
     );
 
-    // Write stock movements
     await prisma.stockMovement.createMany({
       data: movementData.map(m => ({ ...m, referenceId: sale.id })),
     });
 
-    // Audit controlled substances
     for (const { item, product } of allocations) {
       if (product.isControlledSubstance) {
         await writeAuditLog({
@@ -172,7 +166,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       if (Object.keys(createdAtFilter).length > 0) where.createdAt = createdAtFilter;
     }
 
-    if (req.user!.role === 'CASHIER') where.cashierId = req.user!.userId;
+    if (req.user?.role === 'CASHIER') where.cashierId = req.user.userId;
 
     const [sales, total] = await Promise.all([
       prisma.sale.findMany({
@@ -219,14 +213,12 @@ router.post('/:id/refund', requireRole('ADMIN', 'PHARMACIST'), async (req: Reque
 
     await prisma.sale.update({ where: { id: sale.id }, data: { status: 'REFUNDED' } });
 
-    // Restore stock
     await Promise.all(
       sale.items.map((item: { batchId: string; quantity: number }) =>
         prisma.batch.update({ where: { id: item.batchId }, data: { quantityOnHand: { increment: item.quantity } } })
       )
     );
 
-    // Write RETURN_IN movements
     await prisma.stockMovement.createMany({
       data: sale.items.map((item: { productId: string; batchId: string; quantity: number }) => ({
         productId: item.productId,
