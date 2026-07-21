@@ -9,7 +9,9 @@ import { InventoryList } from './pages/inventory/InventoryList';
 import { InventoryDetail } from './pages/inventory/InventoryDetail';
 import { Customers } from './pages/Customers';
 import { Settings } from './pages/settings/Settings';
-import { Placeholder } from './pages/Placeholder';
+import { Reports } from './pages/Reports';
+import { Prescriptions } from './pages/Prescriptions';
+import { Purchasing } from './pages/Purchasing';
 
 const App: React.FC = () => {
   return (
@@ -24,9 +26,9 @@ const App: React.FC = () => {
           <Route path="inventory" element={<InventoryList />} />
           <Route path="inventory/:id" element={<InventoryDetail />} />
           <Route path="customers" element={<Customers />} />
-          <Route path="prescriptions" element={<Placeholder />} />
-          <Route path="purchasing" element={<Placeholder />} />
-          <Route path="reports" element={<Placeholder />} />
+          <Route path="prescriptions" element={<Prescriptions />} />
+          <Route path="purchasing" element={<Purchasing />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
