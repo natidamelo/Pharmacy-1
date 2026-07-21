@@ -20,12 +20,13 @@ import customersRouter from './routes/customers';
 import usersRouter from './routes/users';
 import settingsRouter from './routes/settings';
 import reportsRouter from './routes/reports';
+import prescriptionsRouter from './routes/prescriptions';
+import purchasingRouter from './routes/purchasing';
 
 const app = express();
 const httpServer = createServer(app);
 
 const corsOriginDelegate = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-  // Allow all requests from localhost, Vercel deployments, or configured CLIENT_ORIGIN
   if (!origin || config.clientOrigin === '*' || origin.includes('localhost') || origin.endsWith('.vercel.app') || origin === config.clientOrigin) {
     callback(null, true);
   } else {
@@ -61,6 +62,8 @@ app.use('/api/customers', customersRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/prescriptions', prescriptionsRouter);
+app.use('/api', purchasingRouter); // mounts /api/suppliers & /api/purchase-orders
 
 // Error Handling
 app.use(errorHandler);
