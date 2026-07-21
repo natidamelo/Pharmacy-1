@@ -32,7 +32,7 @@ export const getLowStockProducts = async (): Promise<LowStockAlert[]> => {
 
   const alerts: LowStockAlert[] = [];
   for (const product of products) {
-    const stockOnHand = product.batches.reduce((sum, b) => sum + b.quantityOnHand, 0);
+    const stockOnHand = (product.batches || []).reduce((sum, b) => sum + b.quantityOnHand, 0);
     if (stockOnHand <= product.reorderLevel) {
       alerts.push({
         productId: product.id,
@@ -64,7 +64,7 @@ export const getExpiringBatches = async (days: number = 30): Promise<ExpiringAle
       batchId: b.id,
       batchNumber: b.batchNumber,
       productId: b.productId,
-      productName: b.product.name,
+      productName: b.product?.name || 'Unknown Product',
       expiryDate: b.expiryDate,
       daysToExpiry,
       quantityOnHand: b.quantityOnHand,

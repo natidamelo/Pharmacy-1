@@ -166,9 +166,10 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     if (cashierId) where.cashierId = cashierId;
     if (status) where.status = status;
     if (from || to) {
-      where.createdAt = {};
-      if (from) (where.createdAt as Record<string, Date>).gte = new Date(from);
-      if (to) (where.createdAt as Record<string, Date>).lte = new Date(to);
+      const createdAtFilter: Record<string, Date> = {};
+      if (from && !isNaN(Date.parse(from))) createdAtFilter.gte = new Date(from);
+      if (to && !isNaN(Date.parse(to))) createdAtFilter.lte = new Date(to);
+      if (Object.keys(createdAtFilter).length > 0) where.createdAt = createdAtFilter;
     }
 
     if (req.user!.role === 'CASHIER') where.cashierId = req.user!.userId;
