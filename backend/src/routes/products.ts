@@ -109,6 +109,15 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 router.patch('/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), validate(updateProductSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const product = await prisma.product.update({ where: { id: req.params.id as string }, data: req.body });
+
+    // Sync active batches' cost price if defaultCostPrice was updated
+    if (typeof req.body.defaultCostPrice === 'number' && req.body.defaultCostPrice >= 0) {
+      await prisma.batch.updateMany({
+        where: { productId: req.params.id as string },
+        data: { costPrice: req.body.defaultCostPrice },
+      });
+    }
+
     res.json(product);
   } catch (err: unknown) {
     const e = err as { code?: string };

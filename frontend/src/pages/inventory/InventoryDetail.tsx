@@ -418,7 +418,7 @@ export const InventoryDetail: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label htmlFor="ep-cost" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Base Cost Price (ETB) *</label>
+                  <label htmlFor="ep-cost" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Cost Price (ETB) *</label>
                   <input id="ep-cost" type="number" step="0.01" min="0" required value={editForm.defaultCostPrice} onChange={e => setEditForm(f => ({ ...f, defaultCostPrice: Number(e.target.value) }))} style={inputStyle} />
                 </div>
                 <div>
