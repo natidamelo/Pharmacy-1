@@ -104,7 +104,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // PATCH /api/products/:id
-router.patch('/:id', requireRole('ADMIN'), validate(updateProductSchema), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), validate(updateProductSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const product = await prisma.product.update({ where: { id: req.params.id as string }, data: req.body });
     res.json(product);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Package, ChevronLeft, ChevronRight, X, Loader2 } from 'lucide-react';
+import { Plus, Search, Package, ChevronLeft, ChevronRight, X, Loader2, Edit, Check } from 'lucide-react';
 import { TopBar } from '../../components/layout/TopBar';
 import { Badge } from '../../components/ui/Badge';
 import { productsApi } from '../../api/products';
@@ -39,7 +39,7 @@ const defaultForm: ProductForm = {
 };
 
 export const InventoryList: React.FC = () => {
-  const isAdmin = useAuthStore(s => s.hasRole(['ADMIN']));
+  const isAdmin = useAuthStore(s => s.hasRole(['ADMIN', 'INVENTORY_CLERK']));
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,8 +48,14 @@ export const InventoryList: React.FC = () => {
   const [stockFilter, setStockFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Modals
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+
   const [form, setForm] = useState<ProductForm>(defaultForm);
+  const [editForm, setEditForm] = useState<ProductForm>(defaultForm);
   const [saving, setSaving] = useState(false);
 
   const loadProducts = useCallback(async () => {
@@ -81,6 +87,42 @@ export const InventoryList: React.FC = () => {
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: string } } };
       toast.error(e.response?.data?.error || 'Failed to add product');
+    } finally { setSaving(false); }
+  };
+
+  const handleOpenEdit = (p: Product) => {
+    setEditingProductId(p.id);
+    setEditForm({
+      name: p.name,
+      genericName: p.genericName || '',
+      categoryId: p.categoryId || '',
+      dosageForm: p.dosageForm || 'TABLET',
+      strength: p.strength || '',
+      barcode: p.barcode || '',
+      unitOfMeasure: p.unitOfMeasure || 'Tablet',
+      reorderLevel: p.reorderLevel || 10,
+      defaultSellingPrice: p.defaultSellingPrice || 0,
+      defaultCostPrice: p.defaultCostPrice || p.costPrice || 0,
+      requiresPrescription: p.requiresPrescription || false,
+      isControlledSubstance: p.isControlledSubstance || false,
+      taxRate: p.taxRate || 0,
+    });
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProductId) return;
+    setSaving(true);
+    try {
+      await productsApi.update(editingProductId, editForm);
+      toast.success(`${editForm.name} updated`);
+      setEditOpen(false);
+      setEditingProductId(null);
+      loadProducts();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } };
+      toast.error(e.response?.data?.error || 'Failed to update product');
     } finally { setSaving(false); }
   };
 
@@ -231,17 +273,33 @@ export const InventoryList: React.FC = () => {
                         <StockBadge stock={p.stockOnHand ?? 0} reorderLevel={p.reorderLevel} />
                       </td>
                       <td style={{ padding: '14px 16px' }}>
-                        <Link
-                          to={`/inventory/${p.id}`}
-                          style={{
-                            fontSize: 12, fontWeight: 600, color: '#0F6E5C',
-                            textDecoration: 'none', background: 'rgba(15,110,92,0.08)',
-                            padding: '5px 12px', borderRadius: 8, display: 'inline-block',
-                            border: '1px solid rgba(15,110,92,0.2)',
-                          }}
-                        >
-                          Details →
-                        </Link>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleOpenEdit(p)}
+                              title="Edit Product"
+                              style={{
+                                fontSize: 12, fontWeight: 600, color: '#0F6E5C',
+                                background: '#fff', padding: '5px 10px', borderRadius: 8,
+                                border: '1px solid rgba(15,110,92,0.25)', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: 4,
+                              }}
+                            >
+                              <Edit size={12} /> Edit
+                            </button>
+                          )}
+                          <Link
+                            to={`/inventory/${p.id}`}
+                            style={{
+                              fontSize: 12, fontWeight: 600, color: '#4A5568',
+                              textDecoration: 'none', background: '#F1F5F9',
+                              padding: '5px 10px', borderRadius: 8, display: 'inline-block',
+                              border: '1px solid #E2E8F0',
+                            }}
+                          >
+                            Details →
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -415,6 +473,138 @@ export const InventoryList: React.FC = () => {
                 </button>
                 <button type="submit" disabled={saving} id="save-product-btn" style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', border: 'none', background: saving ? '#9CA3AF' : 'linear-gradient(135deg, #0F6E5C, #0d9488)', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: saving ? 'none' : '0 4px 14px rgba(15,110,92,0.35)', fontFamily: "'Space Grotesk', sans-serif" }}>
                   {saving ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Saving…</> : <><Plus size={15} /> Add Product</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {editOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 50,
+          backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }} onClick={() => setEditOpen(false)}>
+          <div style={{
+            backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 560,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden',
+          }} onClick={e => e.stopPropagation()}>
+
+            <div style={{
+              padding: '18px 24px', borderBottom: '1px solid #EEF2F0',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, #0F6E5C, #0d9488)',
+            }}>
+              <div>
+                <h2 style={{ color: '#fff', fontSize: 18, fontWeight: 700, margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Edit Product Details</h2>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, margin: '2px 0 0' }}>Update product prices and specifications</p>
+              </div>
+              <button onClick={() => setEditOpen(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', color: '#fff' }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label htmlFor="ep-name" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Product Name *</label>
+                <input id="ep-name" required value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label htmlFor="ep-generic" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Generic Name</label>
+                  <input id="ep-generic" value={editForm.genericName} onChange={e => setEditForm(f => ({ ...f, genericName: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label htmlFor="ep-barcode" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Barcode</label>
+                  <input id="ep-barcode" value={editForm.barcode} onChange={e => setEditForm(f => ({ ...f, barcode: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label htmlFor="ep-category" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Category *</label>
+                  <select id="ep-category" required value={editForm.categoryId} onChange={e => setEditForm(f => ({ ...f, categoryId: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
+                    <option value="">Select category…</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="ep-dosage" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Dosage Form *</label>
+                  <select id="ep-dosage" value={editForm.dosageForm} onChange={e => setEditForm(f => ({ ...f, dosageForm: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
+                    {DOSAGE_FORMS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label htmlFor="ep-strength" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Strength</label>
+                  <input id="ep-strength" value={editForm.strength} onChange={e => setEditForm(f => ({ ...f, strength: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label htmlFor="ep-unit" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Unit of Measure *</label>
+                  <input id="ep-unit" required value={editForm.unitOfMeasure} onChange={e => setEditForm(f => ({ ...f, unitOfMeasure: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label htmlFor="ep-cost" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Cost Price (ETB) *</label>
+                  <input id="ep-cost" type="number" step="0.01" min="0" required value={editForm.defaultCostPrice} onChange={e => setEditForm(f => ({ ...f, defaultCostPrice: Number(e.target.value) }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label htmlFor="ep-price" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Selling Price (ETB) *</label>
+                  <input id="ep-price" type="number" step="0.01" min="0" required value={editForm.defaultSellingPrice} onChange={e => setEditForm(f => ({ ...f, defaultSellingPrice: Number(e.target.value) }))} style={inputStyle} />
+                </div>
+              </div>
+
+              {/* Profit & Margin Calculator Banner */}
+              {editForm.defaultSellingPrice > 0 && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: 10, backgroundColor: '#F0FDF4', border: '1px solid #DCFCE7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12,
+                }}>
+                  <span style={{ color: '#166534', fontWeight: 600 }}>
+                    Estimated Unit Profit: <strong>ETB {Math.max(0, editForm.defaultSellingPrice - editForm.defaultCostPrice).toFixed(2)}</strong>
+                  </span>
+                  <span style={{
+                    color: '#0F6E5C', fontWeight: 700, fontFamily: "'Space Mono', monospace",
+                    backgroundColor: 'rgba(15,110,92,0.12)', padding: '2px 8px', borderRadius: 6,
+                  }}>
+                    Gross Margin: {(((editForm.defaultSellingPrice - editForm.defaultCostPrice) / editForm.defaultSellingPrice) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+                <div>
+                  <label htmlFor="ep-reorder" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Reorder Level</label>
+                  <input id="ep-reorder" type="number" min="0" value={editForm.reorderLevel} onChange={e => setEditForm(f => ({ ...f, reorderLevel: Number(e.target.value) }))} style={inputStyle} />
+                </div>
+              </div>
+
+              {/* Checkboxes */}
+              <div style={{ display: 'flex', gap: 20, paddingTop: 4 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer', fontWeight: 500 }}>
+                  <input type="checkbox" checked={editForm.requiresPrescription} onChange={e => setEditForm(f => ({ ...f, requiresPrescription: e.target.checked }))} style={{ accentColor: '#0F6E5C', width: 16, height: 16 }} />
+                  Requires Prescription (Rx)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer', fontWeight: 500 }}>
+                  <input type="checkbox" checked={editForm.isControlledSubstance} onChange={e => setEditForm(f => ({ ...f, isControlledSubstance: e.target.checked }))} style={{ accentColor: '#0F6E5C', width: 16, height: 16 }} />
+                  Controlled Substance
+                </label>
+              </div>
+
+              {/* Submit Buttons */}
+              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                <button type="button" onClick={() => setEditOpen(false)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: '1.5px solid #E8EDE9', background: '#fff', color: '#4A5568', fontSize: 14, fontWeight: 600 }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={saving} id="save-product-edit-btn" style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', border: 'none', background: saving ? '#9CA3AF' : 'linear-gradient(135deg, #0F6E5C, #0d9488)', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: saving ? 'none' : '0 4px 14px rgba(15,110,92,0.35)', fontFamily: "'Space Grotesk', sans-serif" }}>
+                  {saving ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Saving Changes…</> : <><Check size={15} /> Save Changes</>}
                 </button>
               </div>
             </form>
