@@ -1,11 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma';
+import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
 import { validate } from '../middleware/validate';
 import { createProductSchema, updateProductSchema } from '../schemas/product.schema';
 import { parsePagination, paginatedResponse } from '../utils/pagination';
 
 const router = Router();
+router.use(authenticate);
 
 // GET /api/products
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
