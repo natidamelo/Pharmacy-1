@@ -11,9 +11,9 @@ services:
           name: pharmacy-db
           property: connectionString
       - key: JWT_SECRET
-        generateValue: true
+        value: "pharmacy_jwt_secret_key_prod_2026_super_secret"
       - key: JWT_REFRESH_SECRET
-        generateValue: true
+        value: "pharmacy_jwt_refresh_secret_key_prod_2026_super_secret"
       - key: PORT
         value: 10000
 

@@ -38,6 +38,8 @@ const corsOriginDelegate = (origin: string | undefined, callback: (err: Error | 
 // Socket.io
 const io = new SocketServer(httpServer, {
   cors: { origin: corsOriginDelegate, credentials: true },
+  transports: ['polling', 'websocket'],
+  allowEIO3: true,
 });
 initAlertEngine(io);
 

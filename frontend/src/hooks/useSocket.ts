@@ -13,7 +13,12 @@ export const useSocket = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const socket = io(SOCKET_URL, { withCredentials: true });
+    const socket = io(SOCKET_URL, {
+      transports: ['polling', 'websocket'],
+      withCredentials: true,
+      reconnectionAttempts: 5,
+      timeout: 10000,
+    });
     socketRef.current = socket;
 
     socket.on('stock:low', (data: unknown[]) => setLowStock(data));
