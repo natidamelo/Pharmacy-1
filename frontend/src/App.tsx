@@ -12,6 +12,7 @@ import { Settings } from './pages/settings/Settings';
 import { Reports } from './pages/Reports';
 import { Prescriptions } from './pages/Prescriptions';
 import { Purchasing } from './pages/Purchasing';
+import { Billing } from './pages/Billing';
 
 const App: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ const App: React.FC = () => {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="pos" element={<POS />} />
+          <Route path="billing" element={<Billing />} />
           <Route path="inventory" element={<InventoryList />} />
           <Route path="inventory/:id" element={<InventoryDetail />} />
           <Route path="customers" element={<Customers />} />

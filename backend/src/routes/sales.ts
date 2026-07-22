@@ -21,8 +21,8 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
 
     const allocations: Array<{
       item: { productId: string; quantity: number; unitPrice: number; discount: number };
-      product: { id: string; name: string; requiresPrescription: boolean; isControlledSubstance: boolean; taxRate: number };
-      batchAllocations: Array<{ batchId: string; batchNumber: string; quantity: number; unitPrice: number }>;
+      product: { id: string; name: string; requiresPrescription: boolean; isControlledSubstance: boolean; taxRate: number; defaultCostPrice: number };
+      batchAllocations: Array<{ batchId: string; batchNumber: string; quantity: number; unitPrice: number; costPrice: number }>;
     }> = [];
 
     for (const item of items) {
@@ -58,6 +58,7 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
       batchId: string;
       quantity: number;
       unitPrice: number;
+      costPrice: number;
       discount: number;
       lineTotal: number;
     }> = [];
@@ -72,7 +73,6 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
     }> = [];
 
     for (const { item, product, batchAllocations } of allocations) {
-      void product;
       for (const alloc of batchAllocations) {
         const lineTotal = (alloc.unitPrice * alloc.quantity) - (item.discount * (alloc.quantity / item.quantity));
         saleItemsData.push({
@@ -80,6 +80,7 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
           batchId: alloc.batchId,
           quantity: alloc.quantity,
           unitPrice: alloc.unitPrice,
+          costPrice: alloc.costPrice || product.defaultCostPrice || 0,
           discount: item.discount * (alloc.quantity / item.quantity),
           lineTotal,
         });

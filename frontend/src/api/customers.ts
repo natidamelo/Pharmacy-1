@@ -1,5 +1,14 @@
 import api from './client';
 
+export interface Customer {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  allergyNotes?: string;
+  createdAt: string;
+}
+
 export const customersApi = {
   list: (params?: Record<string, string>) => api.get('/customers', { params }).then(r => r.data),
   get: (id: string) => api.get(`/customers/${id}`).then(r => r.data),

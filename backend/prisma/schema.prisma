@@ -113,6 +113,7 @@ model Product {
   isControlledSubstance Boolean     @default(false)
   requiresPrescription  Boolean     @default(false)
   defaultSellingPrice   Float
+  defaultCostPrice      Float       @default(0)
   taxRate               Float       @default(0)
   efdaRegistrationNo    String?
   active                Boolean     @default(true)
@@ -123,6 +124,7 @@ model Product {
   saleItems             SaleItem[]
   prescriptionItems     PrescriptionItem[]
   purchaseOrderItems    PurchaseOrderItem[]
+  invoiceItems          InvoiceItem[]
 
   @@index([name])
 }
@@ -172,6 +174,7 @@ model Customer {
   createdAt     DateTime       @default(now())
   sales         Sale[]
   prescriptions Prescription[]
+  invoices      Invoice[]
 }
 
 model Prescription {
@@ -233,6 +236,7 @@ model SaleItem {
   batch     Batch   @relation(fields: [batchId], references: [id])
   quantity  Int
   unitPrice Float
+  costPrice Float   @default(0)
   discount  Float   @default(0)
   lineTotal Float
 }
@@ -287,4 +291,106 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([userId])
+}
+
+enum InvoiceType {
+  PATIENT_SALE
+  INSURANCE_CLAIM
+  WHOLESALE_CREDIT
+  SUPPLIER_BILL
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum ExpenseCategory {
+  UTILITIES
+  RENT
+  SALARIES
+  SUPPLIES
+  MAINTENANCE
+  OTHER
+}
+
+model Invoice {
+  id             String               @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceNumber  String               @unique
+  type           InvoiceType          @default(PATIENT_SALE)
+  status         InvoiceStatus        @default(ISSUED)
+  customerId     String?              @db.ObjectId
+  customer       Customer?            @relation(fields: [customerId], references: [id])
+  saleId         String?              @db.ObjectId
+  issueDate      DateTime             @default(now())
+  dueDate        DateTime
+  subtotal       Float
+  discountAmount Float                @default(0)
+  taxAmount      Float                @default(0)
+  totalAmount    Float
+  amountPaid     Float                @default(0)
+  balanceDue     Float
+  paymentTerms   String?              @default("Due on Receipt")
+  billingAddress String?
+  taxId          String?
+  notes          String?
+  createdBy      String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  items          InvoiceItem[]
+  payments       PaymentTransaction[]
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+model InvoiceItem {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceId   String   @db.ObjectId
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId   String?  @db.ObjectId
+  product     Product? @relation(fields: [productId], references: [id])
+  description String
+  quantity    Int
+  unitPrice   Float
+  costPrice   Float    @default(0)
+  taxRate     Float    @default(0)
+  lineTotal   Float
+}
+
+model PaymentTransaction {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  transactionNo  String        @unique
+  invoiceId      String?       @db.ObjectId
+  invoice        Invoice?      @relation(fields: [invoiceId], references: [id])
+  saleId         String?       @db.ObjectId
+  amount         Float
+  paymentMethod  PaymentMethod
+  transactionRef String?
+  notes          String?
+  performedBy    String
+  createdAt      DateTime      @default(now())
+
+  @@index([createdAt])
+}
+
+model Expense {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  expenseNumber String          @unique
+  category      ExpenseCategory
+  title         String
+  amount        Float
+  vendor        String?
+  paymentMethod PaymentMethod   @default(CASH)
+  referenceNo   String?
+  expenseDate   DateTime        @default(now())
+  notes         String?
+  createdBy     String
+  createdAt     DateTime        @default(now())
+
+  @@index([expenseDate])
 }

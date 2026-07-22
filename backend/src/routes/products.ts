@@ -35,7 +35,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
           category: { select: { id: true, name: true } },
           batches: {
             where: { quantityOnHand: { gt: 0 }, expiryDate: { gt: new Date() } },
-            select: { quantityOnHand: true, expiryDate: true },
+            select: { quantityOnHand: true, costPrice: true, expiryDate: true },
           },
         },
         orderBy: { name: 'asc' },
@@ -45,9 +45,14 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const enriched = products.map(p => {
       const stockOnHand = p.batches.reduce((sum, b) => sum + b.quantityOnHand, 0);
+      const totalCostValue = p.batches.reduce((sum, b) => sum + (b.costPrice * b.quantityOnHand), 0);
+      const weightedCost = stockOnHand > 0 ? (totalCostValue / stockOnHand) : (p.defaultCostPrice || 0);
+      const costPrice = weightedCost > 0 ? weightedCost : (p.defaultCostPrice || 0);
+      const unitProfit = Math.max(0, p.defaultSellingPrice - costPrice);
+      const grossMarginPct = p.defaultSellingPrice > 0 ? ((p.defaultSellingPrice - costPrice) / p.defaultSellingPrice) * 100 : 0;
       const { batches, ...rest } = p;
       void batches;
-      return { ...rest, stockOnHand };
+      return { ...rest, stockOnHand, costPrice, avgCostPrice: weightedCost, unitProfit, grossMarginPct };
     });
 
     let filtered = enriched;
@@ -86,10 +91,15 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       },
     });
     if (!product) { res.status(404).json({ error: 'Product not found' }); return; }
-    const stockOnHand = product.batches
-      .filter((b: { expiryDate: Date; quantityOnHand: number }) => b.expiryDate > now && b.quantityOnHand > 0)
-      .reduce((s: number, b: { quantityOnHand: number }) => s + b.quantityOnHand, 0);
-    res.json({ ...product, stockOnHand });
+    const validBatches = product.batches.filter((b: { expiryDate: Date; quantityOnHand: number }) => b.expiryDate > now && b.quantityOnHand > 0);
+    const stockOnHand = validBatches.reduce((s: number, b: { quantityOnHand: number }) => s + b.quantityOnHand, 0);
+    const totalCost = validBatches.reduce((s: number, b: { costPrice: number; quantityOnHand: number }) => s + (b.costPrice * b.quantityOnHand), 0);
+    const avgCostPrice = stockOnHand > 0 ? (totalCost / stockOnHand) : (product.defaultCostPrice || 0);
+    const costPrice = avgCostPrice > 0 ? avgCostPrice : (product.defaultCostPrice || 0);
+    const unitProfit = Math.max(0, product.defaultSellingPrice - costPrice);
+    const grossMarginPct = product.defaultSellingPrice > 0 ? ((product.defaultSellingPrice - costPrice) / product.defaultSellingPrice) * 100 : 0;
+
+    res.json({ ...product, stockOnHand, costPrice, avgCostPrice, unitProfit, grossMarginPct });
   } catch (err) { next(err); }
 });
 

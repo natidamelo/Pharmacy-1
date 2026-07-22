@@ -29,12 +29,12 @@ const StockBadge: React.FC<{ stock: number; reorderLevel: number }> = ({ stock, 
 interface ProductForm {
   name: string; genericName: string; categoryId: string; dosageForm: string;
   strength: string; barcode: string; unitOfMeasure: string; reorderLevel: number;
-  defaultSellingPrice: number; requiresPrescription: boolean; isControlledSubstance: boolean; taxRate: number;
+  defaultSellingPrice: number; defaultCostPrice: number; requiresPrescription: boolean; isControlledSubstance: boolean; taxRate: number;
 }
 
 const defaultForm: ProductForm = {
   name: '', genericName: '', categoryId: '', dosageForm: 'TABLET', strength: '',
-  barcode: '', unitOfMeasure: 'Tablet', reorderLevel: 10, defaultSellingPrice: 0,
+  barcode: '', unitOfMeasure: 'Tablet', reorderLevel: 10, defaultSellingPrice: 0, defaultCostPrice: 0,
   requiresPrescription: false, isControlledSubstance: false, taxRate: 0,
 };
 
@@ -102,7 +102,7 @@ export const InventoryList: React.FC = () => {
 
   return (
     <div style={{ backgroundColor: '#F5F7F6', minHeight: '100%' }}>
-      <TopBar title="Inventory" subtitle="Manage pharmacy products, categories, and stock" actions={addBtn} />
+      <TopBar title="Inventory" subtitle="Manage pharmacy products, categories, cost prices, and stock" actions={addBtn} />
 
       <div style={{ padding: '24px 28px' }}>
 
@@ -173,7 +173,7 @@ export const InventoryList: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: '#FAFBFA' }}>
-                  {['Product Name', 'Category', 'Form & Strength', 'Selling Price', 'Stock', 'Status', 'Actions'].map(h => (
+                  {['Product Name', 'Category', 'Form & Strength', 'Cost Price', 'Selling Price', 'Margin', 'Stock', 'Status', 'Actions'].map(h => (
                     <th key={h} style={{
                       padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600,
                       color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.6px', borderBottom: '1px solid #EEF2F0',
@@ -184,49 +184,68 @@ export const InventoryList: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {products.map(p => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #F8FAFA', transition: 'background 0.1s' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#FAFBFA'}
-                    onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'}
-                  >
-                    <td style={{ padding: '14px 16px' }}>
-                      <Link to={`/inventory/${p.id}`} style={{ textDecoration: 'none' }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#0F6E5C' }}>
-                          {p.name}
-                        </div>
-                        {p.genericName && <div style={{ fontSize: 11, color: '#94A3B8' }}>{p.genericName}</div>}
-                      </Link>
-                    </td>
-                    <td style={{ padding: '14px 16px', fontSize: 13, color: '#4A5568' }}>
-                      {p.category?.name || '—'}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontSize: 12, color: '#64748B' }}>
-                      {p.dosageForm} {p.strength ? `· ${p.strength}` : ''}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontSize: 13, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: '#0D1117' }}>
-                      ETB {p.defaultSellingPrice.toFixed(2)}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontSize: 13, fontWeight: 600, fontFamily: "'Space Mono', monospace", color: '#0D1117' }}>
-                      {p.stockOnHand ?? 0} {p.unitOfMeasure}
-                    </td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <StockBadge stock={p.stockOnHand ?? 0} reorderLevel={p.reorderLevel} />
-                    </td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <Link
-                        to={`/inventory/${p.id}`}
-                        style={{
-                          fontSize: 12, fontWeight: 600, color: '#0F6E5C',
-                          textDecoration: 'none', background: 'rgba(15,110,92,0.08)',
-                          padding: '5px 12px', borderRadius: 8, display: 'inline-block',
-                          border: '1px solid rgba(15,110,92,0.2)',
-                        }}
-                      >
-                        View Details →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {products.map(p => {
+                  const cost = p.costPrice ?? p.defaultCostPrice ?? 0;
+                  const margin = p.grossMarginPct ?? (p.defaultSellingPrice > 0 ? ((p.defaultSellingPrice - cost) / p.defaultSellingPrice) * 100 : 0);
+                  const marginColor = margin >= 30 ? '#0F6E5C' : margin >= 15 ? '#C17A1F' : '#C0392B';
+                  const marginBg = margin >= 30 ? 'rgba(15,110,92,0.1)' : margin >= 15 ? 'rgba(193,122,31,0.1)' : 'rgba(192,57,43,0.1)';
+
+                  return (
+                    <tr key={p.id} style={{ borderBottom: '1px solid #F8FAFA', transition: 'background 0.1s' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#FAFBFA'}
+                      onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'}
+                    >
+                      <td style={{ padding: '14px 16px' }}>
+                        <Link to={`/inventory/${p.id}`} style={{ textDecoration: 'none' }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#0F6E5C' }}>
+                            {p.name}
+                          </div>
+                          {p.genericName && <div style={{ fontSize: 11, color: '#94A3B8' }}>{p.genericName}</div>}
+                        </Link>
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: 13, color: '#4A5568' }}>
+                        {p.category?.name || '—'}
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: 12, color: '#64748B' }}>
+                        {p.dosageForm} {p.strength ? `· ${p.strength}` : ''}
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: 13, fontFamily: "'Space Mono', monospace", color: '#64748B' }}>
+                        ETB {cost.toFixed(2)}
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: 13, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: '#0D1117' }}>
+                        ETB {p.defaultSellingPrice.toFixed(2)}
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, fontFamily: "'Space Mono', monospace",
+                          color: marginColor, backgroundColor: marginBg,
+                          padding: '3px 8px', borderRadius: 6, display: 'inline-block',
+                        }}>
+                          {margin.toFixed(1)}%
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: 13, fontWeight: 600, fontFamily: "'Space Mono', monospace", color: '#0D1117' }}>
+                        {p.stockOnHand ?? 0} {p.unitOfMeasure}
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <StockBadge stock={p.stockOnHand ?? 0} reorderLevel={p.reorderLevel} />
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <Link
+                          to={`/inventory/${p.id}`}
+                          style={{
+                            fontSize: 12, fontWeight: 600, color: '#0F6E5C',
+                            textDecoration: 'none', background: 'rgba(15,110,92,0.08)',
+                            padding: '5px 12px', borderRadius: 8, display: 'inline-block',
+                            border: '1px solid rgba(15,110,92,0.2)',
+                          }}
+                        >
+                          Details →
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -343,9 +362,34 @@ export const InventoryList: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
+                  <label htmlFor="p-cost" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Cost Price (ETB) *</label>
+                  <input id="p-cost" type="number" step="0.01" min="0" required value={form.defaultCostPrice} onChange={e => setForm(f => ({ ...f, defaultCostPrice: Number(e.target.value) }))} style={inputStyle} />
+                </div>
+                <div>
                   <label htmlFor="p-price" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Selling Price (ETB) *</label>
                   <input id="p-price" type="number" step="0.01" min="0" required value={form.defaultSellingPrice} onChange={e => setForm(f => ({ ...f, defaultSellingPrice: Number(e.target.value) }))} style={inputStyle} />
                 </div>
+              </div>
+
+              {/* Profit & Margin Calculator Banner */}
+              {form.defaultSellingPrice > 0 && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: 10, backgroundColor: '#F0FDF4', border: '1px solid #DCFCE7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12,
+                }}>
+                  <span style={{ color: '#166534', fontWeight: 600 }}>
+                    Estimated Unit Profit: <strong>ETB {Math.max(0, form.defaultSellingPrice - form.defaultCostPrice).toFixed(2)}</strong>
+                  </span>
+                  <span style={{
+                    color: '#0F6E5C', fontWeight: 700, fontFamily: "'Space Mono', monospace",
+                    backgroundColor: 'rgba(15,110,92,0.12)', padding: '2px 8px', borderRadius: 6,
+                  }}>
+                    Gross Margin: {(((form.defaultSellingPrice - form.defaultCostPrice) / form.defaultSellingPrice) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
                 <div>
                   <label htmlFor="p-reorder" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Reorder Level</label>
                   <input id="p-reorder" type="number" min="0" value={form.reorderLevel} onChange={e => setForm(f => ({ ...f, reorderLevel: Number(e.target.value) }))} style={inputStyle} />

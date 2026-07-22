@@ -17,6 +17,11 @@ export interface Product {
   isControlledSubstance: boolean;
   requiresPrescription: boolean;
   defaultSellingPrice: number;
+  defaultCostPrice?: number;
+  costPrice?: number;
+  avgCostPrice?: number;
+  unitProfit?: number;
+  grossMarginPct?: number;
   taxRate: number;
   active: boolean;
   stockOnHand?: number;

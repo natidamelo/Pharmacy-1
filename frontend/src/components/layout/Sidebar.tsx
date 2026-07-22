@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingCart, Package, FileText,
   Users, BarChart2, Settings, LogOut, Pill, Truck,
-  ChevronRight
+  ChevronRight, CreditCard
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useAlertStore } from '../../store/alertStore';
@@ -19,6 +19,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: '/dashboard', icon: <LayoutDashboard size={17} />, label: 'Dashboard' },
   { to: '/pos', icon: <ShoppingCart size={17} />, label: 'Point of Sale', roles: ['ADMIN', 'PHARMACIST', 'CASHIER'] },
+  { to: '/billing', icon: <CreditCard size={17} />, label: 'Billing & Financials', roles: ['ADMIN', 'PHARMACIST', 'CASHIER'] },
   { to: '/inventory', icon: <Package size={17} />, label: 'Inventory' },
   { to: '/prescriptions', icon: <FileText size={17} />, label: 'Prescriptions', roles: ['ADMIN', 'PHARMACIST'] },
   { to: '/customers', icon: <Users size={17} />, label: 'Customers' },

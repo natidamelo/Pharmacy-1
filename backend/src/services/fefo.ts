@@ -5,6 +5,7 @@ export interface BatchAllocation {
   batchNumber: string;
   quantity: number;
   unitPrice: number;
+  costPrice: number;
 }
 
 /**
@@ -47,6 +48,7 @@ export const resolveFEFO = async (
       batchNumber: batch.batchNumber,
       quantity: take,
       unitPrice: sellingPrice ?? batch.sellingPrice ?? batch.costPrice,
+      costPrice: batch.costPrice,
     });
     remaining -= take;
   }

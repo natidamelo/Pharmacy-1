@@ -22,6 +22,7 @@ import settingsRouter from './routes/settings';
 import reportsRouter from './routes/reports';
 import prescriptionsRouter from './routes/prescriptions';
 import purchasingRouter from './routes/purchasing';
+import billingRouter from './routes/billing';
 
 const app = express();
 const httpServer = createServer(app);
@@ -63,6 +64,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/prescriptions', prescriptionsRouter);
+app.use('/api/billing', billingRouter);
 app.use('/api', purchasingRouter); // mounts /api/suppliers & /api/purchase-orders
 
 // Error Handling

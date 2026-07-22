@@ -129,28 +129,34 @@ export const InventoryDetail: React.FC = () => {
 
         {/* Product Meta Card */}
         <div style={{ backgroundColor: '#fff', borderRadius: 16, border: '1px solid #EEF2F0', padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 20 }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Total Stock</div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#0D1117', fontFamily: "'Space Grotesk', sans-serif", marginTop: 4 }}>
-                {stockOnHand} <span style={{ fontSize: 14, fontWeight: 500, color: '#64748B' }}>{product.unitOfMeasure}</span>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#0D1117', fontFamily: "'Space Grotesk', sans-serif", marginTop: 4 }}>
+                {stockOnHand} <span style={{ fontSize: 13, fontWeight: 500, color: '#64748B' }}>{product.unitOfMeasure}</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Cost Price (Avg)</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#475569', fontFamily: "'Space Mono', monospace", marginTop: 4 }}>
+                ETB {(product.costPrice ?? product.defaultCostPrice ?? 0).toFixed(2)}
               </div>
             </div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Selling Price</div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#0F6E5C', fontFamily: "'Space Mono', monospace", marginTop: 4 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#0F6E5C', fontFamily: "'Space Mono', monospace", marginTop: 4 }}>
                 ETB {product.defaultSellingPrice.toFixed(2)}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Reorder Level</div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#0D1117', fontFamily: "'Space Mono', monospace", marginTop: 4 }}>
-                {product.reorderLevel}
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Profit Margin</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: (product.grossMarginPct ?? 0) >= 30 ? '#0F6E5C' : '#C17A1F', fontFamily: "'Space Mono', monospace", marginTop: 4 }}>
+                {(product.grossMarginPct ?? 0).toFixed(1)}%
               </div>
             </div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Category</div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: '#4A5568', marginTop: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#4A5568', marginTop: 8 }}>
                 {product.category?.name || '—'}
               </div>
             </div>
