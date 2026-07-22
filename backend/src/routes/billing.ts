@@ -257,11 +257,11 @@ router.get('/expenses', async (req: Request, res: Response, next: NextFunction) 
         skip: pagination.skip,
         take: pagination.take,
         orderBy: { expenseDate: 'desc' },
-      }),
-      prisma.expense.count({ where }),
+      }).catch(() => []),
+      prisma.expense.count({ where }).catch(() => 0),
     ]);
 
-    res.json(paginatedResponse(expenses, total, pagination));
+    res.json(paginatedResponse(expenses || [], total || 0, pagination));
   } catch (err) { next(err); }
 });
 
@@ -298,14 +298,16 @@ router.get('/summary', async (_req: Request, res: Response, next: NextFunction) 
     const sales = await prisma.sale.findMany({
       where: { status: 'COMPLETED' },
       include: { items: true },
-    });
+    }).catch(() => []);
 
     let salesRevenue = 0;
     let salesCOGS = 0;
     for (const sale of sales) {
-      salesRevenue += sale.totalAmount;
-      for (const item of sale.items) {
-        salesCOGS += (item.costPrice || 0) * item.quantity;
+      salesRevenue += sale.totalAmount || 0;
+      if (sale.items) {
+        for (const item of sale.items) {
+          salesCOGS += (item.costPrice || 0) * (item.quantity || 0);
+        }
       }
     }
 
@@ -313,18 +315,20 @@ router.get('/summary', async (_req: Request, res: Response, next: NextFunction) 
     const invoices = await prisma.invoice.findMany({
       where: { status: { in: ['PAID', 'PARTIALLY_PAID', 'ISSUED', 'OVERDUE'] } },
       include: { items: true },
-    });
+    }).catch(() => []);
 
     let invoiceCollectedRevenue = 0;
     let invoiceCOGS = 0;
     let accountsReceivable = 0;
 
     for (const inv of invoices) {
-      invoiceCollectedRevenue += inv.amountPaid;
-      accountsReceivable += inv.balanceDue;
+      invoiceCollectedRevenue += inv.amountPaid || 0;
+      accountsReceivable += inv.balanceDue || 0;
 
-      for (const item of inv.items) {
-        invoiceCOGS += (item.costPrice || 0) * item.quantity;
+      if (inv.items) {
+        for (const item of inv.items) {
+          invoiceCOGS += (item.costPrice || 0) * (item.quantity || 0);
+        }
       }
     }
 
@@ -334,10 +338,15 @@ router.get('/summary', async (_req: Request, res: Response, next: NextFunction) 
     const grossProfitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
     // 3. Expenses
-    const expensesAgg = await prisma.expense.aggregate({
-      _sum: { amount: true },
-    });
-    const totalExpenses = expensesAgg._sum.amount || 0;
+    let totalExpenses = 0;
+    try {
+      const expensesAgg = await prisma.expense.aggregate({
+        _sum: { amount: true },
+      });
+      totalExpenses = expensesAgg?._sum?.amount ?? 0;
+    } catch {
+      totalExpenses = 0;
+    }
 
     const netOperatingIncome = grossProfit - totalExpenses;
 
@@ -351,15 +360,15 @@ router.get('/summary', async (_req: Request, res: Response, next: NextFunction) 
     };
 
     for (const sale of sales) {
-      if (paymentBreakdown[sale.paymentMethod] !== undefined) {
-        paymentBreakdown[sale.paymentMethod] += sale.totalAmount;
+      if (sale.paymentMethod && paymentBreakdown[sale.paymentMethod] !== undefined) {
+        paymentBreakdown[sale.paymentMethod] += sale.totalAmount || 0;
       }
     }
 
-    const txns = await prisma.paymentTransaction.findMany();
+    const txns = await prisma.paymentTransaction.findMany().catch(() => []);
     for (const txn of txns) {
-      if (paymentBreakdown[txn.paymentMethod] !== undefined) {
-        paymentBreakdown[txn.paymentMethod] += txn.amount;
+      if (txn.paymentMethod && paymentBreakdown[txn.paymentMethod] !== undefined) {
+        paymentBreakdown[txn.paymentMethod] += txn.amount || 0;
       }
     }
 
@@ -374,7 +383,7 @@ router.get('/summary', async (_req: Request, res: Response, next: NextFunction) 
       netOperatingIncome,
       accountsReceivable,
       paymentBreakdown,
-      unpaidInvoicesCount: invoices.filter(i => i.balanceDue > 0).length,
+      unpaidInvoicesCount: invoices.filter(i => (i.balanceDue || 0) > 0).length,
     });
   } catch (err) { next(err); }
 });
