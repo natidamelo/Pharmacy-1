@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   FileText, Plus, Search, DollarSign, TrendingUp, TrendingDown,
   CreditCard, CheckCircle2, Clock, Printer, X, Loader2,
-  PieChart, Building2, FileCheck, Layers
+  PieChart, Building2, FileCheck, Layers, Edit, Trash2
 } from 'lucide-react';
 import { TopBar } from '../components/layout/TopBar';
 import { Badge } from '../components/ui/Badge';
@@ -56,6 +56,7 @@ export const Billing: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [expensesLoading, setExpensesLoading] = useState(false);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [expenseForm, setExpenseForm] = useState({
     category: 'UTILITIES' as ExpenseCategory,
     title: '',
@@ -66,6 +67,7 @@ export const Billing: React.FC = () => {
     notes: '',
   });
   const [submittingExpense, setSubmittingExpense] = useState(false);
+  const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
   // New Invoice Builder State
   const [products, setProducts] = useState<Product[]>([]);
@@ -168,7 +170,7 @@ export const Billing: React.FC = () => {
     }
   };
 
-  // Add Expense submit
+  // Add / Edit Expense submit
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!expenseForm.title || expenseForm.amount <= 0) {
@@ -177,17 +179,54 @@ export const Billing: React.FC = () => {
     }
     setSubmittingExpense(true);
     try {
-      await billingApi.createExpense(expenseForm);
-      toast.success('Expense recorded');
+      if (editingExpenseId) {
+        await billingApi.updateExpense(editingExpenseId, expenseForm);
+        toast.success('Expense updated');
+      } else {
+        await billingApi.createExpense(expenseForm);
+        toast.success('Expense recorded');
+      }
       setAddExpenseOpen(false);
+      setEditingExpenseId(null);
       setExpenseForm({ category: 'UTILITIES', title: '', amount: 0, vendor: '', paymentMethod: 'CASH', referenceNo: '', notes: '' });
       loadExpenses();
       loadSummary();
     } catch {
-      toast.error('Failed to create expense');
+      toast.error(editingExpenseId ? 'Failed to update expense' : 'Failed to create expense');
     } finally {
       setSubmittingExpense(false);
     }
+  };
+
+  // Delete Expense
+  const handleDeleteExpense = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this expense? This cannot be undone.')) return;
+    setDeletingExpenseId(id);
+    try {
+      await billingApi.deleteExpense(id);
+      toast.success('Expense deleted');
+      loadExpenses();
+      loadSummary();
+    } catch {
+      toast.error('Failed to delete expense');
+    } finally {
+      setDeletingExpenseId(null);
+    }
+  };
+
+  // Open edit modal pre-filled
+  const handleOpenEditExpense = (exp: Expense) => {
+    setEditingExpenseId(exp.id);
+    setExpenseForm({
+      category: exp.category,
+      title: exp.title,
+      amount: exp.amount,
+      vendor: exp.vendor || '',
+      paymentMethod: exp.paymentMethod,
+      referenceNo: exp.referenceNo || '',
+      notes: exp.notes || '',
+    });
+    setAddExpenseOpen(true);
   };
 
   // New Invoice Line Item handlers
@@ -790,14 +829,17 @@ export const Billing: React.FC = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#FAFBFA' }}>
-                      {['Expense #', 'Date', 'Category', 'Title / Description', 'Vendor', 'Method', 'Amount'].map(h => (
+                      {['Expense #', 'Date', 'Category', 'Title / Description', 'Vendor', 'Method', 'Amount', 'Actions'].map(h => (
                         <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', borderBottom: '1px solid #EEF2F0' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {expenses.map(exp => (
-                      <tr key={exp.id} style={{ borderBottom: '1px solid #F8FAFA' }}>
+                      <tr key={exp.id} style={{ borderBottom: '1px solid #F8FAFA', transition: 'background 0.1s' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#FAFBFA'}
+                        onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
+                      >
                         <td style={{ padding: '14px 16px', fontSize: 13, fontFamily: "'Space Mono', monospace", fontWeight: 700, color: '#475569' }}>{exp.expenseNumber}</td>
                         <td style={{ padding: '14px 16px', fontSize: 13, color: '#64748B' }}>{format(new Date(exp.expenseDate), 'dd MMM yyyy')}</td>
                         <td style={{ padding: '14px 16px' }}><Badge variant="neutral">{exp.category}</Badge></td>
@@ -806,6 +848,42 @@ export const Billing: React.FC = () => {
                         <td style={{ padding: '14px 16px', fontSize: 12, color: '#64748B' }}>{exp.paymentMethod}</td>
                         <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: '#C0392B' }}>
                           ETB {exp.amount.toFixed(2)}
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              onClick={() => handleOpenEditExpense(exp)}
+                              title="Edit expense"
+                              style={{
+                                padding: '5px 10px', borderRadius: 7, border: '1.5px solid #0F6E5C',
+                                background: 'rgba(15,110,92,0.07)', color: '#0F6E5C',
+                                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
+                              }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#0F6E5C'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(15,110,92,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = '#0F6E5C'; }}
+                            >
+                              <Edit size={12} /> Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteExpense(exp.id)}
+                              disabled={deletingExpenseId === exp.id}
+                              title="Delete expense"
+                              style={{
+                                padding: '5px 10px', borderRadius: 7, border: '1.5px solid #C0392B',
+                                background: 'rgba(192,57,43,0.07)', color: '#C0392B',
+                                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
+                                opacity: deletingExpenseId === exp.id ? 0.5 : 1,
+                              }}
+                              onMouseEnter={e => { if (deletingExpenseId !== exp.id) { (e.currentTarget as HTMLButtonElement).style.background = '#C0392B'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; } }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(192,57,43,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = '#C0392B'; }}
+                            >
+                              {deletingExpenseId === exp.id
+                                ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                                : <><Trash2 size={12} /> Delete</>}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1010,11 +1088,11 @@ export const Billing: React.FC = () => {
 
       {/* RECORD EXPENSE MODAL */}
       {addExpenseOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 60, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setAddExpenseOpen(false)}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => { setAddExpenseOpen(false); setEditingExpenseId(null); setExpenseForm({ category: 'UTILITIES', title: '', amount: 0, vendor: '', paymentMethod: 'CASH', referenceNo: '', notes: '' }); }}>
           <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '18px 24px', background: 'linear-gradient(135deg, #0F6E5C, #0d9488)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Record Operating Expense</h2>
-              <button onClick={() => setAddExpenseOpen(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: 6, color: '#fff', cursor: 'pointer' }}><X size={16} /></button>
+              <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>{editingExpenseId ? 'Edit Expense' : 'Record Operating Expense'}</h2>
+              <button onClick={() => { setAddExpenseOpen(false); setEditingExpenseId(null); setExpenseForm({ category: 'UTILITIES', title: '', amount: 0, vendor: '', paymentMethod: 'CASH', referenceNo: '', notes: '' }); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: 6, color: '#fff', cursor: 'pointer' }}><X size={16} /></button>
             </div>
 
             <form onSubmit={handleAddExpense} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -1052,9 +1130,9 @@ export const Billing: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button type="button" onClick={() => setAddExpenseOpen(false)} style={{ flex: 1, padding: 11, borderRadius: 10, border: '1.5px solid #E8EDE9', background: '#fff', fontSize: 14, fontWeight: 600, color: '#4A5568', cursor: 'pointer' }}>Cancel</button>
+                <button type="button" onClick={() => { setAddExpenseOpen(false); setEditingExpenseId(null); setExpenseForm({ category: 'UTILITIES', title: '', amount: 0, vendor: '', paymentMethod: 'CASH', referenceNo: '', notes: '' }); }} style={{ flex: 1, padding: 11, borderRadius: 10, border: '1.5px solid #E8EDE9', background: '#fff', fontSize: 14, fontWeight: 600, color: '#4A5568', cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" disabled={submittingExpense} style={{ flex: 2, padding: 11, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #0F6E5C, #0d9488)', fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  {submittingExpense ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : 'Save Expense'}
+                  {submittingExpense ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : editingExpenseId ? 'Update Expense' : 'Save Expense'}
                 </button>
               </div>
             </form>

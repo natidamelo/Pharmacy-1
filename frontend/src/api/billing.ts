@@ -97,6 +97,8 @@ export const billingApi = {
   listExpenses: (params?: Record<string, string>) =>
     api.get('/billing/expenses', { params }).then(r => r.data),
   createExpense: (data: Record<string, unknown>) => api.post('/billing/expenses', data).then(r => r.data),
+  updateExpense: (id: string, data: Record<string, unknown>) => api.patch(`/billing/expenses/${id}`, data).then(r => r.data),
+  deleteExpense: (id: string) => api.delete(`/billing/expenses/${id}`).then(r => r.data),
 
   getSummary: () => api.get('/billing/summary').then(r => r.data),
 };
