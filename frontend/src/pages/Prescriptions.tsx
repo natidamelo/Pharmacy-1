@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, FileText, Loader2, X, UserPlus, Send, Copy, CheckCheck, ClipboardList } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, FileText, Loader2, X, UserPlus, Send, Copy, CheckCheck, ClipboardList, ShoppingCart } from 'lucide-react';
 import { TopBar } from '../components/layout/TopBar';
 import { Badge } from '../components/ui/Badge';
 import { prescriptionsApi } from '../api/prescriptions';
@@ -24,6 +25,7 @@ interface ItemForm {
 }
 
 export const Prescriptions: React.FC = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Record<string, unknown>[]>([]);
   const [search, setSearch] = useState('');
@@ -556,12 +558,20 @@ export const Prescriptions: React.FC = () => {
                 </div>
               </div>
 
-              <button
-                onClick={() => { setSendRxItem(null); setCopied(false); }}
-                style={{ width: '100%', padding: '11px', borderRadius: 10, cursor: 'pointer', border: '1.5px solid #1E2D3D', background: '#141E2B', color: '#64748B', fontSize: 14, fontWeight: 600 }}
-              >
-                Close
-              </button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => { setSendRxItem(null); setCopied(false); }}
+                  style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: '1.5px solid #1E2D3D', background: '#141E2B', color: '#64748B', fontSize: 13, fontWeight: 600 }}
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => { setSendRxItem(null); setCopied(false); navigate('/pos'); }}
+                  style={{ flex: 1.5, padding: '11px', borderRadius: 10, cursor: 'pointer', border: 'none', background: 'linear-gradient(135deg, #0F6E5C, #0d9488)', color: '#fff', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 4px 12px rgba(15,110,92,0.35)' }}
+                >
+                  <ShoppingCart size={14} /> Go to Point of Sale →
+                </button>
+              </div>
             </div>
           </div>
         </div>
