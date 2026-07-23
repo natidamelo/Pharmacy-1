@@ -291,6 +291,46 @@ router.post('/expenses', requireRole('ADMIN', 'INVENTORY_CLERK'), validate(creat
   } catch (err) { next(err); }
 });
 
+// PATCH /api/billing/expenses/:id — Update Expense
+router.patch('/expenses/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { category, title, amount, vendor, paymentMethod, referenceNo, expenseDate, notes } = req.body;
+
+    const existing = await prisma.expense.findUnique({ where: { id } });
+    if (!existing) { res.status(404).json({ error: 'Expense not found' }); return; }
+
+    const updated = await prisma.expense.update({
+      where: { id },
+      data: {
+        ...(category && { category }),
+        ...(title && { title }),
+        ...(amount !== undefined && { amount: Number(amount) }),
+        ...(vendor !== undefined && { vendor }),
+        ...(paymentMethod && { paymentMethod }),
+        ...(referenceNo !== undefined && { referenceNo }),
+        ...(expenseDate && { expenseDate: new Date(expenseDate) }),
+        ...(notes !== undefined && { notes }),
+      },
+    });
+
+    res.json(updated);
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/billing/expenses/:id — Delete Expense
+router.delete('/expenses/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await prisma.expense.findUnique({ where: { id } });
+    if (!existing) { res.status(404).json({ error: 'Expense not found' }); return; }
+
+    await prisma.expense.delete({ where: { id } });
+    res.json({ message: 'Expense deleted successfully' });
+  } catch (err) { next(err); }
+});
+
 // GET /api/billing/summary — Comprehensive Financial Dashboard Metrics
 router.get('/summary', async (_req: Request, res: Response, next: NextFunction) => {
   try {
