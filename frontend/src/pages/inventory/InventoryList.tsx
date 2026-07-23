@@ -27,13 +27,13 @@ const StockBadge: React.FC<{ stock: number; reorderLevel: number }> = ({ stock, 
 };
 
 interface ProductForm {
-  name: string; genericName: string; categoryId: string; dosageForm: string;
+  name: string; genericName: string; brand: string; categoryId: string; dosageForm: string;
   strength: string; barcode: string; unitOfMeasure: string; reorderLevel: number;
   defaultSellingPrice: number; defaultCostPrice: number; requiresPrescription: boolean; isControlledSubstance: boolean; taxRate: number;
 }
 
 const defaultForm: ProductForm = {
-  name: '', genericName: '', categoryId: '', dosageForm: 'TABLET', strength: '',
+  name: '', genericName: '', brand: '', categoryId: '', dosageForm: 'TABLET', strength: '',
   barcode: '', unitOfMeasure: 'Tablet', reorderLevel: 10, defaultSellingPrice: 0, defaultCostPrice: 0,
   requiresPrescription: false, isControlledSubstance: false, taxRate: 0,
 };
@@ -95,6 +95,7 @@ export const InventoryList: React.FC = () => {
     setEditForm({
       name: p.name,
       genericName: p.genericName || '',
+      brand: (p as any).brand || '',
       categoryId: p.categoryId || '',
       dosageForm: p.dosageForm || 'TABLET',
       strength: p.strength || '',
@@ -391,6 +392,11 @@ export const InventoryList: React.FC = () => {
                 </div>
               </div>
 
+              <div>
+                <label htmlFor="p-brand" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Brand</label>
+                <input id="p-brand" placeholder="e.g. GlaxoSmithKline, Pfizer" value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} style={inputStyle} />
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label htmlFor="p-category" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Category *</label>
@@ -521,6 +527,11 @@ export const InventoryList: React.FC = () => {
                   <label htmlFor="ep-barcode" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Barcode</label>
                   <input id="ep-barcode" value={editForm.barcode} onChange={e => setEditForm(f => ({ ...f, barcode: e.target.value }))} style={inputStyle} />
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="ep-brand" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Brand</label>
+                <input id="ep-brand" placeholder="e.g. GlaxoSmithKline, Pfizer" value={editForm.brand} onChange={e => setEditForm(f => ({ ...f, brand: e.target.value }))} style={inputStyle} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
