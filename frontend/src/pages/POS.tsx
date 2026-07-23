@@ -1360,7 +1360,7 @@ export const POS: React.FC = () => {
                             </div>
                             <div style={{ fontSize: 11, color: '#4A5568', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                               <span>Rx {(rx.id as string)?.slice(0, 8).toUpperCase()}</span>
-                              {rx.prescriberLicenseNo && <span>· License: {rx.prescriberLicenseNo as string}</span>}
+                              {Boolean(rx.prescriberLicenseNo) && <span>· License: {rx.prescriberLicenseNo as string}</span>}
                               <span>· {((rx.items as unknown[])?.length ?? 0)} medication(s)</span>
                             </div>
                           </div>

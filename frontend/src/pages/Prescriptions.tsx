@@ -510,7 +510,7 @@ export const Prescriptions: React.FC = () => {
                   onClick={() => handleCopyId((sendRxItem.id as string)?.slice(0, 8).toUpperCase())}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
-                    padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13,
+                    padding: '8px 18px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13,
                     background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.2)',
                     color: copied ? '#10B981' : '#A5B4FC',
                     border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : 'rgba(99,102,241,0.4)'}`,
