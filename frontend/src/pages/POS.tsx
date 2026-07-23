@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Search, Plus, Minus, X, ShoppingCart, CreditCard,
   Printer, Package, CheckCircle, Loader2, Trash2,
-  Tag, Zap, User, ChevronDown, ReceiptText, Banknote,
+  Tag, Zap, User, ReceiptText, Banknote,
   Smartphone, Building2, Hash, Grid3X3, List,
 } from 'lucide-react';
 import { TopBar } from '../components/layout/TopBar';
