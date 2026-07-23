@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, FileText, Loader2, X, UserPlus } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, X, UserPlus, Send, Copy, CheckCheck, ClipboardList } from 'lucide-react';
 import { TopBar } from '../components/layout/TopBar';
 import { Badge } from '../components/ui/Badge';
 import { prescriptionsApi } from '../api/prescriptions';
@@ -33,6 +33,16 @@ export const Prescriptions: React.FC = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [quickCustomerOpen, setQuickCustomerOpen] = useState(false);
   const [viewItem, setViewItem] = useState<Record<string, unknown> | null>(null);
+  const [sendRxItem, setSendRxItem] = useState<Record<string, unknown> | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id).then(() => {
+      setCopied(true);
+      toast.success('Rx ID copied!');
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   // Quick Customer Form
   const [custForm, setCustForm] = useState({ name: '', phone: '', email: '', allergyNotes: '' });
@@ -259,17 +269,34 @@ export const Prescriptions: React.FC = () => {
                         {status === 'CANCELLED' && <Badge variant="neutral">Cancelled</Badge>}
                       </td>
                       <td style={{ padding: '13px 16px' }}>
-                        <button
-                          onClick={() => setViewItem(rx)}
-                          style={{
-                            fontSize: 12, fontWeight: 600, color: '#0F6E5C',
-                            textDecoration: 'none', background: 'rgba(15,110,92,0.08)',
-                            padding: '5px 12px', borderRadius: 8, border: '1px solid rgba(15,110,92,0.2)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          View Details →
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <button
+                            onClick={() => setViewItem(rx)}
+                            style={{
+                              fontSize: 12, fontWeight: 600, color: '#0F6E5C',
+                              background: 'rgba(15,110,92,0.08)',
+                              padding: '5px 12px', borderRadius: 8, border: '1px solid rgba(15,110,92,0.2)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            View Details →
+                          </button>
+                          {status === 'PENDING' && (
+                            <button
+                              onClick={() => setSendRxItem(rx)}
+                              title="Send to Cashier"
+                              style={{
+                                fontSize: 12, fontWeight: 600, color: '#fff',
+                                background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                                padding: '5px 12px', borderRadius: 8, border: 'none',
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+                                boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+                              }}
+                            >
+                              <Send size={11} /> Send to Cashier
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -452,6 +479,94 @@ export const Prescriptions: React.FC = () => {
       )}
 
       {/* ── View Prescription Modal ── */}
+      {/* ── Send to Cashier Modal ── */}
+      {sendRxItem && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => { setSendRxItem(null); setCopied(false); }}>
+          <div style={{ backgroundColor: '#0D1620', borderRadius: 20, width: '100%', maxWidth: 480, boxShadow: '0 24px 80px rgba(0,0,0,0.6)', overflow: 'hidden', border: '1px solid #1E2D3D', animation: 'fadeIn 0.2s ease' }} onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Send size={18} color="#fff" />
+                </div>
+                <div>
+                  <h2 style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Send to Cashier</h2>
+                  <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11, margin: '2px 0 0' }}>Share this Rx with the cashier to process payment</p>
+                </div>
+              </div>
+              <button onClick={() => { setSendRxItem(null); setCopied(false); }} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 6, display: 'flex', color: '#fff' }}><X size={16} /></button>
+            </div>
+
+            <div style={{ padding: '24px' }}>
+
+              {/* Big Rx ID block */}
+              <div style={{ backgroundColor: '#141E2B', borderRadius: 14, padding: '20px', border: '1px solid #1E2D3D', marginBottom: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#4A5568', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>Prescription ID</div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: '#A5B4FC', fontFamily: "'Space Mono', monospace", letterSpacing: '3px', marginBottom: 14 }}>
+                  {(sendRxItem.id as string)?.slice(0, 8).toUpperCase()}
+                </div>
+                <button
+                  onClick={() => handleCopyId((sendRxItem.id as string)?.slice(0, 8).toUpperCase())}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13,
+                    background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.2)',
+                    color: copied ? '#10B981' : '#A5B4FC',
+                    border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : 'rgba(99,102,241,0.4)'}`,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {copied ? <><CheckCheck size={14} /> Copied!</> : <><Copy size={14} /> Copy ID</>}
+                </button>
+              </div>
+
+              {/* Prescription details */}
+              <div style={{ backgroundColor: '#141E2B', borderRadius: 12, padding: '14px 16px', border: '1px solid #1E2D3D', marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: '#4A5568', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Prescriber</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#E2E8F0', marginTop: 3 }}>{sendRxItem.prescriberName as string}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: '#4A5568', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Medications</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#E2E8F0', marginTop: 3 }}>{((sendRxItem.items as unknown[])?.length ?? 0)} item(s)</div>
+                  </div>
+                </div>
+                {((sendRxItem.items as Record<string, unknown>[]) || []).map((it, idx) => (
+                  <div key={idx} style={{ marginTop: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid #1E2D3D', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1' }}>{(it.product as { name?: string })?.name || 'Medication'}</div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#A5B4FC', fontFamily: "'Space Mono', monospace" }}>{it.quantityPrescribed as number} units</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Instructions for pharmacist */}
+              <div style={{ backgroundColor: 'rgba(99,102,241,0.08)', borderRadius: 12, padding: '14px 16px', border: '1px solid rgba(99,102,241,0.2)', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <ClipboardList size={15} color="#818CF8" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#A5B4FC', marginBottom: 4 }}>Instructions for Cashier</div>
+                    <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.5 }}>
+                      Tell the cashier to go to <strong style={{ color: '#CBD5E1' }}>Point of Sale → Load Prescription (Rx)</strong> and search for:
+                      <br />
+                      <span style={{ fontFamily: "'Space Mono', monospace", color: '#A5B4FC', fontSize: 13, fontWeight: 700 }}>Dr. {sendRxItem.prescriberName as string}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => { setSendRxItem(null); setCopied(false); }}
+                style={{ width: '100%', padding: '11px', borderRadius: 10, cursor: 'pointer', border: '1.5px solid #1E2D3D', background: '#141E2B', color: '#64748B', fontSize: 14, fontWeight: 600 }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {viewItem && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setViewItem(null)}>
           <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
