@@ -4,6 +4,7 @@ import {
   Printer, Package, CheckCircle, Loader2, Trash2,
   Tag, Zap, User, ReceiptText, Banknote,
   Smartphone, Building2, Hash, Grid3X3, List,
+  FileText, ClipboardList,
 } from 'lucide-react';
 import { TopBar } from '../components/layout/TopBar';
 import { productsApi } from '../api/products';
@@ -11,6 +12,7 @@ import type { Product } from '../api/products';
 import { categoriesApi } from '../api/categories';
 import type { Category } from '../api/categories';
 import { salesApi } from '../api/sales';
+import { prescriptionsApi } from '../api/prescriptions';
 import { useCartStore } from '../store/cartStore';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -68,6 +70,14 @@ export const POS: React.FC = () => {
   const [cashTendered, setCashTendered] = useState('');
   const [completing, setCompleting] = useState(false);
   const [customerNote, setCustomerNote] = useState('');
+
+  /* Load Prescription (Rx) into cart */
+  const [rxModalOpen, setRxModalOpen]       = useState(false);
+  const [rxSearch, setRxSearch]             = useState('');
+  const [rxResults, setRxResults]           = useState<Record<string, unknown>[]>([]);
+  const [rxLoading, setRxLoading]           = useState(false);
+  const [rxFilling, setRxFilling]           = useState(false);
+  const [loadedRx, setLoadedRx]             = useState<Record<string, unknown> | null>(null);
 
   /* Load all products + categories on mount */
   useEffect(() => {
@@ -136,14 +146,71 @@ export const POS: React.FC = () => {
     });
   };
 
+  /* Search pending prescriptions */
+  const handleRxSearch = useCallback(async (value: string) => {
+    setRxSearch(value);
+    if (!value.trim()) { setRxResults([]); return; }
+    setRxLoading(true);
+    try {
+      const res = await prescriptionsApi.list({ search: value, status: 'PENDING' });
+      setRxResults(res.data || []);
+    } catch { setRxResults([]); } finally { setRxLoading(false); }
+  }, []);
+
+  /* Load a prescription and fill the cart */
+  const handleLoadRx = async (rx: Record<string, unknown>) => {
+    setRxFilling(true);
+    try {
+      const full = await prescriptionsApi.get(rx.id as string);
+      const rxItems = (full.items as Array<{
+        productId: string;
+        quantityPrescribed: number;
+        dosageInstructions: string;
+        product: { id: string; name: string; defaultSellingPrice: number;
+          requiresPrescription: boolean; isControlledSubstance: boolean;
+          stockOnHand?: number; reorderLevel: number; };
+      }>);
+
+      clearCart();
+      for (const it of rxItems) {
+        // Fetch live product data (for stockOnHand & current price)
+        const prodData = await productsApi.list({ search: it.product.name, pageSize: '5' });
+        const prod = (prodData.data as Product[])?.find((p: Product) => p.id === it.productId)
+                     ?? it.product as unknown as Product;
+
+        if ((prod.stockOnHand ?? 0) <= 0) {
+          toast.error(`${prod.name} is out of stock — skipped`);
+          continue;
+        }
+        addItem({
+          productId: it.productId,
+          productName: prod.name,
+          quantity: it.quantityPrescribed,
+          unitPrice: prod.defaultSellingPrice,
+          discount: 0,
+          requiresPrescription: prod.requiresPrescription,
+          isControlledSubstance: prod.isControlledSubstance,
+          stockOnHand: prod.stockOnHand ?? 0,
+        });
+      }
+
+      setLoadedRx(full);
+      setRxModalOpen(false);
+      setRxSearch('');
+      setRxResults([]);
+      toast.success(`Prescription loaded — ${rxItems.length} medication(s) added to cart`, { icon: '📋' });
+    } catch {
+      toast.error('Failed to load prescription');
+    } finally { setRxFilling(false); }
+  };
+
   /* Complete sale */
   const handleCompleteSale = async () => {
     setCompleting(true);
     try {
-      const sale = await salesApi.create({
+      const payload: Parameters<typeof salesApi.create>[0] = {
         paymentMethod,
         discountAmount: discount,
-        overridePrescription: true,
         notes: customerNote || undefined,
         items: items.map(i => ({
           productId: i.productId,
@@ -151,9 +218,19 @@ export const POS: React.FC = () => {
           unitPrice: i.unitPrice,
           discount: i.discount,
         })),
-      });
+      };
+
+      // Link prescription if one was loaded; otherwise use override
+      if (loadedRx) {
+        payload.prescriptionId = loadedRx.id as string;
+      } else {
+        payload.overridePrescription = true;
+      }
+
+      const sale = await salesApi.create(payload);
       setLastSale(sale);
       clearCart();
+      setLoadedRx(null);
       setCheckoutOpen(false);
       setReceiptOpen(true);
       setDiscount(0);
@@ -549,7 +626,7 @@ export const POS: React.FC = () => {
                 </span>
               </div>
               {items.length > 0 && (
-                <button onClick={clearCart} id="clear-cart-btn" style={{
+                <button onClick={() => { clearCart(); setLoadedRx(null); }} id="clear-cart-btn" style={{
                   fontSize: 11, color: 'rgba(255,255,255,0.65)', background: 'rgba(255,255,255,0.12)',
                   border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', borderRadius: 20,
                   padding: '3px 10px', fontWeight: 600, transition: 'all 0.15s',
@@ -559,6 +636,47 @@ export const POS: React.FC = () => {
                 </button>
               )}
             </div>
+
+            {/* Loaded Rx badge OR Load Rx button */}
+            {loadedRx ? (
+              <div style={{
+                marginTop: 10, padding: '7px 10px', borderRadius: 8,
+                background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <ClipboardList size={13} color="#F59E0B" />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B' }}>
+                    Rx: {(loadedRx.id as string)?.slice(0, 8).toUpperCase()}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'rgba(245,158,11,0.7)' }}>
+                    · {(loadedRx.prescriberName as string)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => { setLoadedRx(null); clearCart(); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#F59E0B', padding: 2, display: 'flex' }}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <button
+                id="load-rx-btn"
+                onClick={() => setRxModalOpen(true)}
+                style={{
+                  marginTop: 10, width: '100%', padding: '8px 12px', borderRadius: 8,
+                  border: '1.5px dashed rgba(13,148,136,0.5)', background: 'rgba(13,148,136,0.07)',
+                  color: '#5EEAD4', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(13,148,136,0.15)'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#0d9488'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(13,148,136,0.07)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(13,148,136,0.5)'; }}
+              >
+                <FileText size={13} /> Load Prescription (Rx)
+              </button>
+            )}
           </div>
 
           {/* Cart items */}
@@ -779,8 +897,18 @@ export const POS: React.FC = () => {
               {/* LEFT: Payment options + discount + note */}
               <div style={{ flex: 1, padding: '20px 24px', borderRight: '1px solid #1E2D3D', overflowY: 'auto', minWidth: 0 }}>
 
-                {/* Rx warning */}
-                {items.some(i => i.requiresPrescription) && (
+                {/* Rx badge — shows whether a prescription is linked */}
+                {loadedRx ? (
+                  <div style={{
+                    padding: '10px 14px', borderRadius: 10, marginBottom: 16,
+                    backgroundColor: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.3)',
+                    fontSize: 12, color: '#5EEAD4', fontWeight: 600,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}>
+                    <ClipboardList size={15} />
+                    Prescription linked · Rx {(loadedRx.id as string)?.slice(0, 8).toUpperCase()} · {loadedRx.prescriberName as string}
+                  </div>
+                ) : items.some(i => i.requiresPrescription) ? (
                   <div style={{
                     padding: '10px 14px', borderRadius: 10, marginBottom: 16,
                     backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)',
@@ -789,7 +917,7 @@ export const POS: React.FC = () => {
                   }}>
                     <ReceiptText size={15} /> Prescription items present — verify before completing sale.
                   </div>
-                )}
+                ) : null}
 
                 {/* Payment method */}
                 <div style={{ marginBottom: 18 }}>
@@ -1125,6 +1253,142 @@ export const POS: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════
+          LOAD PRESCRIPTION MODAL
+      ══════════════════════════════════════════════ */}
+      {rxModalOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 60,
+          backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }} onClick={() => { setRxModalOpen(false); setRxSearch(''); setRxResults([]); }}>
+          <div style={{
+            backgroundColor: '#0D1620', borderRadius: 20, width: '100%', maxWidth: 540,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.7)', border: '1px solid #1E2D3D',
+            animation: 'scaleIn 0.2s ease', overflow: 'hidden',
+          }} onClick={e => e.stopPropagation()}>
+
+            {/* Modal header */}
+            <div style={{
+              padding: '18px 22px', borderBottom: '1px solid #1E2D3D',
+              background: 'linear-gradient(135deg, #0F6E5C, #0d9488)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <ClipboardList size={18} color="#fff" />
+                <div>
+                  <h2 style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
+                    Load Prescription
+                  </h2>
+                  <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11, margin: '2px 0 0' }}>
+                    Search pending prescriptions to auto-fill the cart
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setRxModalOpen(false); setRxSearch(''); setRxResults([]); }}
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 6, display: 'flex', color: '#fff' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Search input */}
+            <div style={{ padding: '16px 22px', borderBottom: '1px solid #1A2332' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={15} color="#4A5568" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                {rxLoading && <Loader2 size={14} color="#0d9488" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', animation: 'spin 1s linear infinite' }} />}
+                <input
+                  id="rx-search-input"
+                  autoFocus
+                  placeholder="Search by prescriber name or license number…"
+                  value={rxSearch}
+                  onChange={e => handleRxSearch(e.target.value)}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    border: '1.5px solid #1E2D3D', borderRadius: 10,
+                    padding: '10px 14px 10px 38px', fontSize: 13, color: '#E2E8F0',
+                    backgroundColor: '#141E2B', outline: 'none',
+                    fontFamily: "'Inter', sans-serif",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = '#0d9488'; }}
+                  onBlur={e => { e.target.style.borderColor = '#1E2D3D'; }}
+                />
+              </div>
+            </div>
+
+            {/* Results */}
+            <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+              {!rxSearch.trim() ? (
+                <div style={{ padding: '40px 22px', textAlign: 'center', color: '#4A5568' }}>
+                  <FileText size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
+                  <p style={{ fontSize: 13, margin: 0 }}>Type a prescriber name to search pending prescriptions</p>
+                </div>
+              ) : rxResults.length === 0 && !rxLoading ? (
+                <div style={{ padding: '40px 22px', textAlign: 'center', color: '#4A5568' }}>
+                  <p style={{ fontSize: 13, margin: 0 }}>No pending prescriptions found for "{rxSearch}"</p>
+                </div>
+              ) : (
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                  {rxResults.map((rx, idx) => (
+                    <li key={rx.id as string} style={{ borderBottom: idx < rxResults.length - 1 ? '1px solid #1A2332' : 'none' }}>
+                      <button
+                        onClick={() => handleLoadRx(rx)}
+                        disabled={rxFilling}
+                        style={{
+                          width: '100%', padding: '14px 22px', background: 'none', border: 'none',
+                          cursor: rxFilling ? 'wait' : 'pointer', textAlign: 'left',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#141E2B'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                            background: 'linear-gradient(135deg, rgba(15,110,92,0.2), rgba(13,148,136,0.2))',
+                            border: '1px solid rgba(13,148,136,0.3)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <ClipboardList size={16} color="#0d9488" />
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#E2E8F0', marginBottom: 2 }}>
+                              {rx.prescriberName as string}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#4A5568', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                              <span>Rx {(rx.id as string)?.slice(0, 8).toUpperCase()}</span>
+                              {rx.prescriberLicenseNo && <span>· License: {rx.prescriberLicenseNo as string}</span>}
+                              <span>· {((rx.items as unknown[])?.length ?? 0)} medication(s)</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                          <div style={{
+                            fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
+                            background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)',
+                            marginBottom: 4,
+                          }}>
+                            PENDING
+                          </div>
+                          {rxFilling ? (
+                            <Loader2 size={14} color="#0d9488" style={{ animation: 'spin 1s linear infinite' }} />
+                          ) : (
+                            <div style={{ fontSize: 11, color: '#0d9488', fontWeight: 600 }}>Load →</div>
+                          )}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

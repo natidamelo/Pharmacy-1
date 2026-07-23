@@ -140,6 +140,15 @@ router.post('/', requireRole('ADMIN', 'PHARMACIST', 'CASHIER'), validate(createS
     }
 
     await emitAlerts();
+
+    // Mark the linked prescription as fully dispensed
+    if (prescriptionId) {
+      await prisma.prescription.update({
+        where: { id: prescriptionId },
+        data: { status: 'FULLY_DISPENSED' },
+      });
+    }
+
     res.status(201).json(sale);
   } catch (err: unknown) {
     const e = err as Error;

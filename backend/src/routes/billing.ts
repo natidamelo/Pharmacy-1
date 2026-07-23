@@ -294,8 +294,12 @@ router.post('/expenses', requireRole('ADMIN', 'INVENTORY_CLERK'), validate(creat
 // PATCH /api/billing/expenses/:id — Update Expense
 router.patch('/expenses/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
-    const { category, title, amount, vendor, paymentMethod, referenceNo, expenseDate, notes } = req.body;
+    const id = req.params.id as string;
+    const body = req.body as {
+      category?: string; title?: string; amount?: number | string;
+      vendor?: string; paymentMethod?: string; referenceNo?: string;
+      expenseDate?: string; notes?: string;
+    };
 
     const existing = await prisma.expense.findUnique({ where: { id } });
     if (!existing) { res.status(404).json({ error: 'Expense not found' }); return; }
@@ -303,14 +307,14 @@ router.patch('/expenses/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), async (re
     const updated = await prisma.expense.update({
       where: { id },
       data: {
-        ...(category && { category }),
-        ...(title && { title }),
-        ...(amount !== undefined && { amount: Number(amount) }),
-        ...(vendor !== undefined && { vendor }),
-        ...(paymentMethod && { paymentMethod }),
-        ...(referenceNo !== undefined && { referenceNo }),
-        ...(expenseDate && { expenseDate: new Date(expenseDate) }),
-        ...(notes !== undefined && { notes }),
+        ...(body.category    && { category: body.category as string }),
+        ...(body.title       && { title: body.title as string }),
+        ...(body.amount !== undefined && { amount: Number(body.amount) }),
+        ...(body.vendor      !== undefined && { vendor: body.vendor as string }),
+        ...(body.paymentMethod && { paymentMethod: body.paymentMethod as string }),
+        ...(body.referenceNo !== undefined && { referenceNo: body.referenceNo as string }),
+        ...(body.expenseDate && { expenseDate: new Date(body.expenseDate as string) }),
+        ...(body.notes       !== undefined && { notes: body.notes as string }),
       },
     });
 
