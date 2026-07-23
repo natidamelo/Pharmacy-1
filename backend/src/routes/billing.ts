@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { ExpenseCategory, PaymentMethod } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/roleGuard';
@@ -296,8 +297,8 @@ router.patch('/expenses/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), async (re
   try {
     const id = req.params.id as string;
     const body = req.body as {
-      category?: string; title?: string; amount?: number | string;
-      vendor?: string; paymentMethod?: string; referenceNo?: string;
+      category?: ExpenseCategory; title?: string; amount?: number | string;
+      vendor?: string; paymentMethod?: PaymentMethod; referenceNo?: string;
       expenseDate?: string; notes?: string;
     };
 
@@ -307,14 +308,14 @@ router.patch('/expenses/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), async (re
     const updated = await prisma.expense.update({
       where: { id },
       data: {
-        ...(body.category    && { category: body.category as string }),
-        ...(body.title       && { title: body.title as string }),
+        ...(body.category    && { category: body.category }),
+        ...(body.title       && { title: body.title }),
         ...(body.amount !== undefined && { amount: Number(body.amount) }),
-        ...(body.vendor      !== undefined && { vendor: body.vendor as string }),
-        ...(body.paymentMethod && { paymentMethod: body.paymentMethod as string }),
-        ...(body.referenceNo !== undefined && { referenceNo: body.referenceNo as string }),
-        ...(body.expenseDate && { expenseDate: new Date(body.expenseDate as string) }),
-        ...(body.notes       !== undefined && { notes: body.notes as string }),
+        ...(body.vendor      !== undefined && { vendor: body.vendor }),
+        ...(body.paymentMethod && { paymentMethod: body.paymentMethod }),
+        ...(body.referenceNo !== undefined && { referenceNo: body.referenceNo }),
+        ...(body.expenseDate && { expenseDate: new Date(body.expenseDate) }),
+        ...(body.notes       !== undefined && { notes: body.notes }),
       },
     });
 
@@ -325,7 +326,7 @@ router.patch('/expenses/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), async (re
 // DELETE /api/billing/expenses/:id — Delete Expense
 router.delete('/expenses/:id', requireRole('ADMIN', 'INVENTORY_CLERK'), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const existing = await prisma.expense.findUnique({ where: { id } });
     if (!existing) { res.status(404).json({ error: 'Expense not found' }); return; }
