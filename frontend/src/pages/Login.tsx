@@ -25,14 +25,6 @@ const fadeUp = {
   }),
 };
 
-const cardHover = {
-  rest: { y: 0, boxShadow: '0 4px 16px rgba(0,0,0,0.4)' },
-  hover: {
-    y: -5,
-    boxShadow: '0 20px 48px rgba(0,0,0,0.55)',
-    transition: { duration: 0.25, ease: 'easeOut' as const },
-  },
-};
 
 /* ──────────────────────────────────────────────────────────────────────
    COLOR TOKENS — all values reference CSS variables defined in index.css
