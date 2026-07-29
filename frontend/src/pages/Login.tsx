@@ -203,7 +203,7 @@ export const Login: React.FC = () => {
             radial-gradient(ellipse 65% 55% at 88% 78%,  rgba(99,102,241,0.20)  0%, transparent 58%),
             radial-gradient(ellipse 45% 38% at 55% 5%,   rgba(99,102,241,0.09)  0%, transparent 50%),
             radial-gradient(ellipse 40% 30% at 80% 40%,  rgba(129,140,248,0.07) 0%, transparent 45%),
-            linear-gradient(158deg, ${T.pageBg} 0%, ${T.pageBgMid} 55%, #0E1D34 100%)
+            linear-gradient(158deg, ${T.pageBg} 0%, ${T.pageBgMid} 55%, #1A3258 100%)
           `,
           position: 'relative',
           overflow: 'hidden',
@@ -244,7 +244,7 @@ export const Login: React.FC = () => {
             background: `
               radial-gradient(ellipse 65% 48% at 28% 28%, rgba(13,148,136,0.10) 0%, transparent 60%),
               radial-gradient(ellipse 45% 38% at 82% 72%, rgba(99,102,241,0.10) 0%, transparent 55%),
-              rgba(12,24,40,0.45)
+              rgba(22,43,82,0.40)
             `,
             backdropFilter: 'blur(2px)',
             borderRight: '1px solid rgba(255,255,255,0.05)',
@@ -453,7 +453,7 @@ export const Login: React.FC = () => {
             /* Right panel: indigo glow, no teal */
             background: `
               radial-gradient(ellipse 60% 50% at 72% 28%, rgba(99,102,241,0.10) 0%, transparent 60%),
-              rgba(12,24,40,0.22)
+              rgba(22,43,82,0.18)
             `,
             backdropFilter: 'blur(4px)',
           }}

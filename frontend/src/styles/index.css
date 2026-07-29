@@ -24,12 +24,12 @@
 
   /* ── Dark login theme ──────────────────────────────────────────── */
   /* Page backgrounds */
-  --color-dark-bg:         #0C1828;
-  --color-dark-bg-mid:     #112238;
+  --color-dark-bg:         #162B52;
+  --color-dark-bg-mid:     #1B3560;
 
   /* Raised surfaces (cards, panels) */
-  --color-dark-surface:    #192E4A;
-  --color-dark-surface-2:  #203558;
+  --color-dark-surface:    #233F70;
+  --color-dark-surface-2:  #2A4B80;
 
   /* Secondary accent — indigo / violet */
   --color-indigo:          #6366F1;
@@ -48,8 +48,8 @@
   --color-dark-muted:      #64748B;
 
   /* Dark inputs */
-  --color-dark-input-bg:   #0A1624;
-  --color-dark-input-bdr:  rgba(255, 255, 255, 0.12);
+  --color-dark-input-bg:   #101F3E;
+  --color-dark-input-bdr:  rgba(255, 255, 255, 0.14);
 
   /* Fonts */
   --font-display: 'Space Grotesk', sans-serif;
