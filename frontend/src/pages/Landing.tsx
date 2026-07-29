@@ -1,122 +1,96 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Package, BarChart3, Bell, FileText, Shield, Building2,
-  Link2, ArrowRight, Play, Star, CheckCircle2, TrendingUp,
-  Menu, X, AlertCircle, Activity, Zap,
+  Package, BarChart3, Bell, FileText, Shield,
+  Link2, ArrowRight, Star, CheckCircle2, TrendingUp,
+  Menu, X, AlertCircle, Activity, Zap, Headphones,
+  Clock, ChevronRight, ArrowUpRight
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════════════════
-   DATA
+   DATA & CONSTANTS
 ══════════════════════════════════════════════════════════════════════ */
-const NAV_LINKS = ['Features', 'Pricing', 'About', 'Contact'];
+const NAV_LINKS = [
+  { name: 'Features', href: '#features' },
+  { name: 'Solutions', href: '#solutions' },
+  { name: 'Testimonials', href: '#testimonials' },
+  { name: 'Trust & Security', href: '#trust' },
+];
 
-const FEATURES = [
+const TRUST_CALLOUTS = [
   {
-    Icon: Package,
-    label: 'FEFO Dispensing',
-    desc: 'Automatically track batch expiry dates and enforce First-Expired-First-Out dispensing across your entire inventory.',
-    chipBase: 'bg-emerald-100',
-    chipHover: 'group-hover:bg-emerald-500',
-    iconBase: 'text-emerald-600',
-    iconHover: 'group-hover:text-white',
-    hoverBorder: 'hover:border-emerald-100',
+    icon: Clock,
+    title: '5-Min Onboarding',
+    desc: 'Instant cloud deployment with automated data import from legacy POS.',
+    badge: 'Fast Setup',
   },
   {
-    Icon: BarChart3,
-    label: 'Live Analytics',
-    desc: 'Real-time dashboards surfacing sales trends, inventory turnover, and revenue insights at a glance.',
-    chipBase: 'bg-blue-100',
-    chipHover: 'group-hover:bg-blue-500',
-    iconBase: 'text-blue-600',
-    iconHover: 'group-hover:text-white',
-    hoverBorder: 'hover:border-blue-100',
+    icon: Shield,
+    title: 'HIPAA & Audit Compliant',
+    desc: 'Bank-grade 256-bit encryption with immutable digital audit trails.',
+    badge: 'Certified',
   },
   {
-    Icon: Bell,
-    label: 'Smart Alerts',
-    desc: 'Proactive low-stock, near-expiry, and reorder-point notifications delivered before stockouts happen.',
-    chipBase: 'bg-amber-100',
-    chipHover: 'group-hover:bg-amber-500',
-    iconBase: 'text-amber-500',
-    iconHover: 'group-hover:text-white',
-    hoverBorder: 'hover:border-amber-100',
+    icon: Activity,
+    title: '99.99% Uptime SLA',
+    desc: 'High-availability multi-region cloud for uninterrupted dispensing.',
+    badge: 'Reliable',
   },
   {
-    Icon: FileText,
-    label: 'Prescriptions',
-    desc: 'Full prescription lifecycle — intake, validation, dispensing history, and digital refill management.',
-    chipBase: 'bg-violet-100',
-    chipHover: 'group-hover:bg-violet-500',
-    iconBase: 'text-violet-600',
-    iconHover: 'group-hover:text-white',
-    hoverBorder: 'hover:border-violet-100',
-  },
-  {
-    Icon: Shield,
-    label: 'Compliance',
-    desc: 'Built-in controlled substance tracking, audit logs, and regulatory reporting for stress-free inspections.',
-    chipBase: 'bg-rose-100',
-    chipHover: 'group-hover:bg-rose-500',
-    iconBase: 'text-rose-500',
-    iconHover: 'group-hover:text-white',
-    hoverBorder: 'hover:border-rose-100',
-  },
-  {
-    Icon: Building2,
-    label: 'Multi-Location',
-    desc: 'Manage an entire pharmacy chain from one dashboard — stock transfers, unified reporting, role-based access.',
-    chipBase: 'bg-cyan-100',
-    chipHover: 'group-hover:bg-cyan-500',
-    iconBase: 'text-cyan-600',
-    iconHover: 'group-hover:text-white',
-    hoverBorder: 'hover:border-cyan-100',
+    icon: Headphones,
+    title: '24/7 Expert Support',
+    desc: 'Direct line to dedicated pharmacy software specialists.',
+    badge: 'Always On',
   },
 ];
 
 const STATS = [
-  { value: '500+',   label: 'Pharmacies' },
+  { value: '500+',   label: 'Active Pharmacies' },
   { value: '2M+',   label: 'Prescriptions Filled' },
-  { value: '99.9%', label: 'Uptime SLA' },
-  { value: '50+',   label: 'Countries' },
+  { value: '99.99%', label: 'Guaranteed Uptime' },
+  { value: '50+',   label: 'Countries Supported' },
 ];
 
 const AVATARS = [
-  { initials: 'SA', from: 'from-emerald-400', to: 'to-teal-500' },
+  { initials: 'DR', from: 'from-emerald-400', to: 'to-teal-500' },
   { initials: 'LM', from: 'from-blue-400',    to: 'to-violet-500' },
-  { initials: 'RK', from: 'from-orange-400',  to: 'to-rose-500' },
-  { initials: 'JP', from: 'from-amber-400',   to: 'to-orange-500' },
+  { initials: 'RK', from: 'from-amber-400',   to: 'to-rose-500' },
+  { initials: 'JP', from: 'from-indigo-400',  to: 'to-cyan-500' },
 ];
 
 /* ══════════════════════════════════════════════════════════════════════
    NAVBAR
 ══════════════════════════════════════════════════════════════════════ */
-interface NavbarProps { scrolled: boolean; menuOpen: boolean; setMenuOpen: (v: boolean) => void; }
+interface NavbarProps {
+  scrolled: boolean;
+  menuOpen: boolean;
+  setMenuOpen: (v: boolean) => void;
+}
 
 const Navbar: React.FC<NavbarProps> = ({ scrolled, menuOpen, setMenuOpen }) => (
   <nav
     style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
       transition: 'all 0.3s ease',
-      background: scrolled ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.65)',
+      background: scrolled ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.75)',
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
       borderBottom: scrolled ? '1px solid rgba(226,232,240,0.8)' : '1px solid transparent',
-      boxShadow: scrolled ? '0 1px 20px rgba(0,0,0,0.06)' : 'none',
+      boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.04)' : 'none',
     }}
   >
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between h-16">
+      <div className="flex items-center justify-between h-18 py-3">
 
         {/* ── Logo ── */}
         <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
           <div
             style={{ background: 'linear-gradient(135deg, #059669 0%, #14b8a6 100%)' }}
-            className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm"
+            className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md shadow-emerald-600/20"
           >
-            <Link2 size={15} color="#fff" strokeWidth={2.5} />
+            <Link2 size={16} color="#fff" strokeWidth={2.5} />
           </div>
-          <span className="text-[17px] font-extrabold tracking-tight leading-none">
+          <span className="text-lg font-extrabold tracking-tight leading-none">
             <span className="text-slate-900">Pharma</span>
             <span className="text-emerald-600">Sys</span>
           </span>
@@ -126,26 +100,32 @@ const Navbar: React.FC<NavbarProps> = ({ scrolled, menuOpen, setMenuOpen }) => (
         <div className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((l) => (
             <a
-              key={l}
-              href={`#${l.toLowerCase()}`}
+              key={l.name}
+              href={l.href}
               className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors duration-150"
             >
-              {l}
+              {l.name}
             </a>
           ))}
         </div>
 
         {/* ── Right CTAs (desktop) ── */}
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors px-3 py-2">
-            Log in
+          <Link
+            to="/login"
+            className="text-sm font-semibold text-slate-700 hover:text-emerald-600 transition-colors px-4 py-2"
+          >
+            Sign In
           </Link>
           <Link
             to="/login"
-            style={{ background: 'linear-gradient(135deg, #059669 0%, #14b8a6 100%)', boxShadow: '0 4px 16px rgba(5,150,105,0.35)' }}
+            style={{
+              background: 'linear-gradient(135deg, #059669 0%, #14b8a6 100%)',
+              boxShadow: '0 4px 14px rgba(5,150,105,0.30)',
+            }}
             className="px-5 py-2.5 rounded-full text-sm font-semibold text-white hover:scale-105 hover:shadow-lg transition-all duration-200"
           >
-            Get Started
+            Start Free Trial
           </Link>
         </div>
 
@@ -155,33 +135,38 @@ const Navbar: React.FC<NavbarProps> = ({ scrolled, menuOpen, setMenuOpen }) => (
           className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
           aria-label="Toggle menu"
         >
-          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
       {/* ── Mobile dropdown ── */}
       {menuOpen && (
-        <div className="md:hidden border-t border-slate-100 py-4 space-y-1 bg-white/95">
+        <div className="md:hidden border-t border-slate-100 py-4 space-y-2 bg-white/95 backdrop-blur-md rounded-b-2xl shadow-xl px-2">
           {NAV_LINKS.map((l) => (
             <a
-              key={l}
-              href={`#${l.toLowerCase()}`}
-              className="block px-3 py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
+              key={l.name}
+              href={l.href}
+              className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
               onClick={() => setMenuOpen(false)}
             >
-              {l}
+              {l.name}
             </a>
           ))}
           <div className="pt-3 border-t border-slate-100 space-y-2">
-            <Link to="/login" className="block px-3 py-2.5 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-50 transition-colors">
-              Log in
+            <Link
+              to="/login"
+              className="block px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 rounded-xl text-center"
+              onClick={() => setMenuOpen(false)}
+            >
+              Sign In
             </Link>
             <Link
               to="/login"
               style={{ background: 'linear-gradient(135deg, #059669 0%, #14b8a6 100%)' }}
-              className="block px-5 py-3 rounded-full text-sm font-semibold text-center text-white"
+              className="block px-5 py-3 rounded-full text-sm font-semibold text-center text-white shadow-md"
+              onClick={() => setMenuOpen(false)}
             >
-              Get Started
+              Start Free Trial
             </Link>
           </div>
         </div>
@@ -191,145 +176,116 @@ const Navbar: React.FC<NavbarProps> = ({ scrolled, menuOpen, setMenuOpen }) => (
 );
 
 /* ══════════════════════════════════════════════════════════════════════
-   DASHBOARD PREVIEW CARD
+   HERO DASHBOARD VISUAL MOCKUP
 ══════════════════════════════════════════════════════════════════════ */
-const DashboardCard: React.FC = () => (
-  <div className="relative px-4 py-6">
-    {/* Main glassmorphic card */}
+const HeroDashboardVisual: React.FC = () => (
+  <div className="relative px-2 py-4 sm:px-4">
+    {/* Main glassmorphic container */}
     <div
       style={{
-        background: 'rgba(255,255,255,0.88)',
+        background: 'rgba(255,255,255,0.90)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(226,232,240,0.7)',
-        boxShadow: '0 24px 80px rgba(0,0,0,0.12), 0 4px 20px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(226,232,240,0.8)',
+        boxShadow: '0 24px 80px rgba(0,0,0,0.09), 0 4px 24px rgba(5,150,105,0.06)',
       }}
       className="rounded-3xl p-6 relative overflow-hidden"
     >
-      {/* Soft inner gradient */}
-      <div
-        className="absolute inset-0 rounded-3xl pointer-events-none"
-        style={{ background: 'linear-gradient(135deg, rgba(236,253,245,0.4) 0%, rgba(255,255,255,0) 50%, rgba(204,251,241,0.2) 100%)' }}
-      />
-
-      {/* ── Card header ── */}
-      <div className="flex items-center justify-between mb-5 relative">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center">
-            <Package size={18} className="text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-slate-800">Inventory Status</p>
-            <p className="text-xs text-slate-400">2,847 Products</p>
-          </div>
+      {/* Top window controls */}
+      <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-rose-400" />
+          <div className="w-3 h-3 rounded-full bg-amber-400" />
+          <div className="w-3 h-3 rounded-full bg-emerald-400" />
+          <span className="text-xs text-slate-400 font-mono ml-2">pharmasys-cloud-v4.2</span>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+        <div className="flex items-center gap-2 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-semibold text-emerald-600">Live</span>
+          <span className="text-[11px] font-semibold text-emerald-700">Live Dispensing Active</span>
         </div>
       </div>
 
-      {/* ── Progress bars ── */}
-      <div className="space-y-4 mb-5 relative">
-        {/* In Stock */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-semibold text-slate-600">In Stock</span>
-            <span className="text-xs font-bold text-emerald-600">92%</span>
+      {/* Main dashboard mockup content */}
+      <div className="space-y-4">
+        {/* Metric cards grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-100">
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+              <span>Today's Revenue</span>
+              <TrendingUp size={14} className="text-emerald-500" />
+            </div>
+            <p className="text-xl font-extrabold text-slate-900">$4,829.50</p>
+            <span className="text-[11px] font-bold text-emerald-600">↑ +14.2% vs avg</span>
           </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: '92%',
-                background: 'linear-gradient(90deg, #059669 0%, #14b8a6 100%)',
-                animation: 'bar-grow-92 1.4s cubic-bezier(0.22,1,0.36,1) 0.3s both',
-              }}
-            />
-          </div>
-        </div>
-        {/* Near Expiry */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-semibold text-slate-600">Near Expiry</span>
-            <span className="text-xs font-bold text-amber-500">12 items</span>
-          </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: '15%',
-                background: 'linear-gradient(90deg, #f59e0b 0%, #fb923c 100%)',
-                animation: 'bar-grow-15 1.4s cubic-bezier(0.22,1,0.36,1) 0.5s both',
-              }}
-            />
-          </div>
-        </div>
-      </div>
 
-      {/* ── Mini stat chips ── */}
-      <div className="grid grid-cols-2 gap-3 relative">
-        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sales Today</span>
-            <TrendingUp size={12} className="text-emerald-500" />
+          <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-100">
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+              <span>Prescriptions Verified</span>
+              <CheckCircle2 size={14} className="text-blue-500" />
+            </div>
+            <p className="text-xl font-extrabold text-slate-900">184 / 190</p>
+            <span className="text-[11px] font-bold text-blue-600">96.8% FEFO compliant</span>
           </div>
-          <p className="text-lg font-extrabold text-slate-800 tracking-tight">$4,280</p>
-          <p className="text-[11px] font-semibold text-emerald-500 mt-0.5">↑ 12% vs yesterday</p>
         </div>
-        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rx Today</span>
-            <Activity size={12} className="text-blue-500" />
+
+        {/* Real-time inventory bar chart simulation */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-800">FEFO Stock Allocation</span>
+            <span className="text-[11px] font-medium text-slate-400">Batches auto-sorted</span>
           </div>
-          <p className="text-lg font-extrabold text-slate-800 tracking-tight">156</p>
-          <p className="text-[11px] font-semibold text-blue-500 mt-0.5">↑ 8% vs yesterday</p>
+          <div className="space-y-2.5">
+            <div>
+              <div className="flex justify-between text-[11px] font-medium text-slate-600 mb-1">
+                <span>Amoxicillin 500mg (Batch A901 - Exp 10/26)</span>
+                <span className="text-emerald-600 font-bold">First Out</span>
+              </div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full w-[85%]" />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-[11px] font-medium text-slate-600 mb-1">
+                <span>Metformin 850mg (Batch B402 - Exp 04/27)</span>
+                <span className="text-emerald-600 font-bold">Dispensing</span>
+              </div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-teal-500 rounded-full w-[62%]" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    {/* ── Floating bubble: Low Stock Alert (rose) — top-right ── */}
+    {/* Floating Bubble Top Right */}
     <div
-      className="absolute top-2 right-0 z-10"
-      style={{ animation: 'bubble-float 3s ease-in-out infinite' }}
+      className="absolute top-4 -right-2 z-10 hidden sm:block"
+      style={{ animation: 'bubble-float 3.5s ease-in-out infinite' }}
     >
-      <div
-        style={{
-          background: 'rgba(255,255,255,0.96)',
-          border: '1px solid rgba(254,205,211,0.9)',
-          boxShadow: '0 8px 28px rgba(244,63,94,0.12), 0 2px 8px rgba(0,0,0,0.06)',
-        }}
-        className="rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5"
-      >
+      <div className="bg-white/95 backdrop-blur-md border border-rose-200/80 shadow-lg shadow-rose-500/10 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
-          <AlertCircle size={13} className="text-rose-500" />
+          <AlertCircle size={14} className="text-rose-500" />
         </div>
         <div>
-          <p className="text-[11px] font-bold text-slate-800 leading-tight">Low Stock Alert</p>
-          <p className="text-[10px] text-slate-400 leading-tight mt-0.5">Amoxicillin 500mg</p>
+          <p className="text-[11px] font-bold text-slate-900 leading-tight">Low Stock Alert</p>
+          <p className="text-[10px] text-slate-400">Atorvastatin • Reorder sent</p>
         </div>
       </div>
     </div>
 
-    {/* ── Floating bubble: FEFO Verified (emerald) — bottom-left ── */}
+    {/* Floating Bubble Bottom Left */}
     <div
-      className="absolute bottom-2 left-0 z-10"
-      style={{ animation: 'bubble-float 4s ease-in-out infinite 0.8s' }}
+      className="absolute -bottom-3 -left-2 z-10 hidden sm:block"
+      style={{ animation: 'bubble-float 4.2s ease-in-out infinite 1s' }}
     >
-      <div
-        style={{
-          background: 'rgba(255,255,255,0.96)',
-          border: '1px solid rgba(167,243,208,0.9)',
-          boxShadow: '0 8px 28px rgba(5,150,105,0.12), 0 2px 8px rgba(0,0,0,0.06)',
-        }}
-        className="rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5"
-      >
+      <div className="bg-white/95 backdrop-blur-md border border-emerald-200/80 shadow-lg shadow-emerald-500/10 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-          <CheckCircle2 size={13} className="text-emerald-500" />
+          <CheckCircle2 size={14} className="text-emerald-500" />
         </div>
         <div>
           <p className="text-[11px] font-bold text-emerald-700 leading-tight">FEFO Verified ✓</p>
-          <p className="text-[10px] text-slate-400 leading-tight mt-0.5">All batches checked</p>
+          <p className="text-[10px] text-slate-400">Zero expired items issued</p>
         </div>
       </div>
     </div>
@@ -340,47 +296,47 @@ const DashboardCard: React.FC = () => (
    HERO SECTION
 ══════════════════════════════════════════════════════════════════════ */
 const HeroSection: React.FC = () => (
-  <section className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
-    {/* Decorative background blobs */}
+  <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    {/* Soft background ambient gradient */}
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
       <div
         className="absolute"
         style={{
-          top: '-10%', left: '-5%', width: '45%', height: '60%',
-          background: 'radial-gradient(ellipse, rgba(167,243,208,0.35) 0%, transparent 65%)',
-          filter: 'blur(40px)',
+          top: '-15%', left: '-5%', width: '50%', height: '65%',
+          background: 'radial-gradient(ellipse, rgba(167,243,208,0.30) 0%, transparent 70%)',
+          filter: 'blur(50px)',
         }}
       />
       <div
         className="absolute"
         style={{
-          top: '10%', right: '-8%', width: '40%', height: '55%',
-          background: 'radial-gradient(ellipse, rgba(204,251,241,0.4) 0%, transparent 65%)',
-          filter: 'blur(48px)',
+          top: '15%', right: '-5%', width: '45%', height: '60%',
+          background: 'radial-gradient(ellipse, rgba(204,251,241,0.35) 0%, transparent 70%)',
+          filter: 'blur(50px)',
         }}
       />
     </div>
 
     <div className="max-w-7xl mx-auto relative" style={{ zIndex: 1 }}>
-      <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+      <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-        {/* ── Left column ── */}
+        {/* Left Column */}
         <div>
           {/* Badge */}
           <div
-            style={{ border: '1px solid rgba(167,243,208,0.8)', background: 'rgba(236,253,245,0.8)' }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-7"
+            style={{ border: '1px solid rgba(167,243,208,0.9)', background: 'rgba(236,253,245,0.85)' }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 shadow-sm"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-bold text-emerald-700 tracking-wide">Trusted by 500+ Pharmacies</span>
+            <span className="text-xs font-bold text-emerald-800 tracking-wide">Next-Gen Pharmacy SaaS</span>
           </div>
 
-          {/* Headline */}
+          {/* Main Headline */}
           <h1
             className="font-extrabold tracking-tight leading-[1.04] text-slate-900 mb-6"
-            style={{ fontSize: 'clamp(40px, 5.5vw, 62px)' }}
+            style={{ fontSize: 'clamp(40px, 5.2vw, 60px)' }}
           >
-            Pharmacy<br />management,{' '}
+            Pharmacy management,{' '}
             <span
               style={{
                 background: 'linear-gradient(135deg, #059669 0%, #14b8a6 100%)',
@@ -393,66 +349,62 @@ const HeroSection: React.FC = () => (
             </span>
           </h1>
 
-          {/* Subhead */}
-          <p className="text-lg text-slate-500 leading-relaxed mb-8 max-w-[500px]">
-            From FEFO dispensing to live sales analytics, smart low-stock alerts,
-            and full prescription management — everything beautifully unified in one platform.
+          {/* Subtext */}
+          <p className="text-lg text-slate-500 leading-relaxed mb-8 max-w-[520px]">
+            Eliminate stockouts, automate FEFO dispensing, track prescriptions in real time, and scale multi-branch operations with confidence.
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-wrap gap-3 mb-10">
+          <div className="flex flex-wrap items-center gap-4 mb-10">
             <Link
               to="/login"
               style={{
                 background: 'linear-gradient(135deg, #059669 0%, #14b8a6 100%)',
-                boxShadow: '0 8px 24px rgba(5,150,105,0.40)',
+                boxShadow: '0 8px 24px rgba(5,150,105,0.35)',
               }}
               className="inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-white text-[15px] hover:scale-105 hover:shadow-xl transition-all duration-200"
             >
               Start Free Trial <ArrowRight size={17} />
             </Link>
-            <button
-              style={{ border: '1.5px solid rgba(203,213,225,0.9)', background: 'rgba(255,255,255,0.9)' }}
-              className="inline-flex items-center gap-2.5 px-7 py-4 rounded-full font-semibold text-slate-700 text-[15px] hover:scale-105 hover:shadow-md transition-all duration-200"
+            
+            <Link
+              to="/login"
+              style={{ border: '1.5px solid rgba(203,213,225,0.9)', background: '#FFFFFF' }}
+              className="inline-flex items-center gap-2 px-6 py-4 rounded-full font-semibold text-slate-700 text-[15px] hover:bg-slate-50 hover:scale-105 transition-all duration-200"
             >
-              <span className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
-                <Play size={10} className="text-slate-600 ml-0.5" fill="currentColor" />
-              </span>
-              Watch Demo
-            </button>
+              Sign In to Demo <ChevronRight size={16} className="text-slate-400" />
+            </Link>
           </div>
 
-          {/* Social proof */}
-          <div className="flex items-center gap-4">
-            {/* Avatar stack */}
-            <div className="flex -space-x-2.5">
+          {/* Social Proof Stack */}
+          <div className="flex items-center gap-4 pt-2 border-t border-slate-100">
+            <div className="flex -space-x-2">
               {AVATARS.map((a, i) => (
                 <div
                   key={i}
                   className={`w-9 h-9 rounded-full border-2 border-white bg-gradient-to-br ${a.from} ${a.to} flex items-center justify-center shadow-sm`}
                 >
-                  <span className="text-white text-[9px] font-bold tracking-tight">{a.initials}</span>
+                  <span className="text-white text-[9px] font-bold">{a.initials}</span>
                 </div>
               ))}
             </div>
-            {/* Rating */}
             <div>
               <div className="flex items-center gap-0.5 mb-0.5">
-                {Array.from({ length: 5 }).map((_, i) => (
+                {[...Array(5)].map((_, i) => (
                   <Star key={i} size={13} fill="#fbbf24" className="text-amber-400" />
                 ))}
               </div>
               <p className="text-xs text-slate-500">
-                <span className="font-bold text-slate-800">4.9/5</span> from 200+ reviews
+                <span className="font-bold text-slate-900">4.9/5</span> rated by 500+ pharmacists
               </p>
             </div>
           </div>
         </div>
 
-        {/* ── Right column: Dashboard card ── */}
+        {/* Right Column Visual */}
         <div className="flex justify-center lg:justify-end">
-          <div className="w-full max-w-md">
-            <DashboardCard />
+          <div className="w-full max-w-lg">
+            <HeroDashboardVisual />
           </div>
         </div>
       </div>
@@ -461,81 +413,28 @@ const HeroSection: React.FC = () => (
 );
 
 /* ══════════════════════════════════════════════════════════════════════
-   STATS BAR
+   TRUST & BENEFIT STRIP
 ══════════════════════════════════════════════════════════════════════ */
-const StatsBar: React.FC = () => (
-  <section
-    id="about"
-    style={{
-      background: 'rgba(255,255,255,0.6)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      borderTop: '1px solid rgba(226,232,240,0.8)',
-      borderBottom: '1px solid rgba(226,232,240,0.8)',
-    }}
-    className="py-12"
-  >
+const TrustBenefitStrip: React.FC = () => (
+  <section id="trust" className="py-12 bg-slate-50/80 border-y border-slate-200/80">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-        {STATS.map((s) => (
-          <div key={s.value}>
-            <p
-              className="font-extrabold tracking-tight text-slate-900 mb-1"
-              style={{ fontSize: 'clamp(28px, 3.5vw, 40px)' }}
-            >
-              {s.value}
-            </p>
-            <p className="text-sm text-slate-400 font-medium tracking-wide">{s.label}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-/* ══════════════════════════════════════════════════════════════════════
-   FEATURES SECTION
-══════════════════════════════════════════════════════════════════════ */
-const FeaturesSection: React.FC = () => (
-  <section id="features" className="py-24 px-4 sm:px-6 lg:px-8">
-    <div className="max-w-7xl mx-auto">
-
-      {/* Section header */}
-      <div className="text-center mb-16">
-        <div
-          style={{ border: '1px solid rgba(167,243,208,0.7)', background: 'rgba(236,253,245,0.7)' }}
-          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full mb-5"
-        >
-          <Zap size={11} className="text-emerald-600" />
-          <span className="text-xs font-bold text-emerald-700 tracking-widest uppercase">Features</span>
-        </div>
-        <h2
-          className="font-extrabold tracking-tight text-slate-900 mb-4"
-          style={{ fontSize: 'clamp(30px, 4vw, 48px)' }}
-        >
-          Everything your pharmacy needs
-        </h2>
-        <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
-          One platform to manage your entire pharmacy — no more juggling spreadsheets,
-          legacy software, or manual processes.
-        </p>
-      </div>
-
-      {/* Feature cards grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {FEATURES.map((f) => {
-          const Icon = f.Icon;
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {TRUST_CALLOUTS.map((item) => {
+          const Icon = item.icon;
           return (
             <div
-              key={f.label}
-              className={`group bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-default ${f.hoverBorder}`}
+              key={item.title}
+              className="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-sm flex items-start gap-4 hover:shadow-md transition-shadow"
             >
-              {/* Icon chip */}
-              <div className={`w-14 h-14 rounded-2xl ${f.chipBase} ${f.chipHover} flex items-center justify-center mb-6 transition-colors duration-300`}>
-                <Icon size={22} className={`${f.iconBase} ${f.iconHover} transition-colors duration-300`} />
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center flex-shrink-0">
+                <Icon size={19} className="text-emerald-600" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">{f.label}</h3>
-              <p className="text-slate-500 leading-relaxed text-sm">{f.desc}</p>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
+              </div>
             </div>
           );
         })}
@@ -545,50 +444,333 @@ const FeaturesSection: React.FC = () => (
 );
 
 /* ══════════════════════════════════════════════════════════════════════
+   DEDICATED FEATURE SECTIONS (FEFO, Analytics, Alerts, Rx)
+══════════════════════════════════════════════════════════════════════ */
+const FeatureSections: React.FC = () => (
+  <section id="features" className="py-24 space-y-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+
+    {/* Section Intro */}
+    <div className="text-center max-w-3xl mx-auto mb-16">
+      <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wider mb-4">
+        <Zap size={12} /> Purpose-Built Architecture
+      </div>
+      <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
+        Four Pillars of High-Performance Pharmacy Software
+      </h2>
+      <p className="text-slate-500 text-base sm:text-lg">
+        Designed from the ground up for modern pharmacy workflows — reducing human error and maximizing efficiency.
+      </p>
+    </div>
+
+    {/* FEATURE 1: FEFO Dispensing */}
+    <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-6">
+          <Package size={24} />
+        </div>
+        <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-600">01. Smart Inventory</span>
+        <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 mb-4">
+          Automated FEFO Dispensing & Batch Precision
+        </h3>
+        <p className="text-slate-500 text-base leading-relaxed mb-6">
+          Eliminate stock expiration losses completely. PharmaSys automatically prioritizes inventory batches based on <strong>First-Expired-First-Out</strong> (FEFO) principles during point-of-sale checkout.
+        </p>
+        <ul className="space-y-3 mb-8">
+          {[
+            'Automatic batch selection at POS checkout',
+            'Real-time expiration countdown & audit logs',
+            'Barcode scanning verification for zero-error dispensing',
+          ].map((bullet) => (
+            <li key={bullet} className="flex items-center gap-3 text-sm text-slate-700 font-medium">
+              <CheckCircle2 size={16} className="text-emerald-500 flex-shrink-0" />
+              {bullet}
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 text-emerald-600 font-bold text-sm hover:text-emerald-700"
+        >
+          Explore FEFO Workflows <ArrowUpRight size={16} />
+        </Link>
+      </div>
+
+      {/* FEFO Mockup Visual */}
+      <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 p-6 sm:p-8 rounded-3xl border border-emerald-100 shadow-sm">
+        <div className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <span className="text-xs font-bold text-slate-800">Batch Prioritization Queue</span>
+            <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full">FEFO Enforced</span>
+          </div>
+          
+          <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/80 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-900">Paracetamol 500mg • Batch #P-881</p>
+              <p className="text-[11px] text-slate-500">Expiring in 18 days (August 2026)</p>
+            </div>
+            <span className="text-xs font-bold text-emerald-700 bg-white px-2.5 py-1 rounded-lg shadow-xs">DISPENSE FIRST</span>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between opacity-75">
+            <div>
+              <p className="text-xs font-bold text-slate-800">Paracetamol 500mg • Batch #P-902</p>
+              <p className="text-[11px] text-slate-500">Expiring in 140 days (December 2026)</p>
+            </div>
+            <span className="text-xs font-medium text-slate-400">Queue #2</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* FEATURE 2: Live Analytics */}
+    <div className="grid lg:grid-cols-2 gap-12 items-center lg:flex-row-reverse">
+      <div className="lg:order-2">
+        <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-6">
+          <BarChart3 size={24} />
+        </div>
+        <span className="text-xs font-extrabold uppercase tracking-wider text-blue-600">02. Business Intelligence</span>
+        <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 mb-4">
+          Real-Time Sales & Revenue Analytics
+        </h3>
+        <p className="text-slate-500 text-base leading-relaxed mb-6">
+          Gain full visibility into fast-moving pharmaceuticals, peak sales hours, branch revenues, and profit margins with live operational dashboards.
+        </p>
+        <ul className="space-y-3 mb-8">
+          {[
+            'Instant daily, weekly, and monthly sales breakdowns',
+            'Automated profit margin calculations per product',
+            'Exportable financial reports for tax & accounting',
+          ].map((bullet) => (
+            <li key={bullet} className="flex items-center gap-3 text-sm text-slate-700 font-medium">
+              <CheckCircle2 size={16} className="text-blue-500 flex-shrink-0" />
+              {bullet}
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 text-blue-600 font-bold text-sm hover:text-blue-700"
+        >
+          View Analytics Demo <ArrowUpRight size={16} />
+        </Link>
+      </div>
+
+      {/* Analytics Mockup Visual */}
+      <div className="lg:order-1 bg-gradient-to-br from-blue-50/80 to-indigo-50/50 p-6 sm:p-8 rounded-3xl border border-blue-100 shadow-sm">
+        <div className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase">Gross Revenue Today</p>
+              <p className="text-2xl font-extrabold text-slate-900">$6,410.00</p>
+            </div>
+            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">+18.5% Growth</span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 items-end h-28 pt-4 border-t border-slate-100">
+            {[40, 65, 85, 100].map((h, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <div style={{ height: `${h}%` }} className="w-full bg-gradient-to-t from-blue-600 to-cyan-400 rounded-t-md" />
+                <span className="text-[10px] text-slate-400">Q{i+1}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* FEATURE 3: Smart Alerts */}
+    <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-6">
+          <Bell size={24} />
+        </div>
+        <span className="text-xs font-extrabold uppercase tracking-wider text-amber-600">03. Automated Safeguards</span>
+        <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 mb-4">
+          Smart Low-Stock & Expiry Alerts
+        </h3>
+        <p className="text-slate-500 text-base leading-relaxed mb-6">
+          Never let a critical medication go out of stock. PharmaSys sends automated notifications when stock drops below threshold levels or medicines near expiry.
+        </p>
+        <ul className="space-y-3 mb-8">
+          {[
+            'Customizable reorder thresholds per drug',
+            'Near-expiry warnings 30, 60, and 90 days out',
+            'One-click purchase order generation',
+          ].map((bullet) => (
+            <li key={bullet} className="flex items-center gap-3 text-sm text-slate-700 font-medium">
+              <CheckCircle2 size={16} className="text-amber-500 flex-shrink-0" />
+              {bullet}
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 text-amber-600 font-bold text-sm hover:text-amber-700"
+        >
+          See Alert Systems <ArrowUpRight size={16} />
+        </Link>
+      </div>
+
+      {/* Smart Alerts Visual */}
+      <div className="bg-gradient-to-br from-amber-50/80 to-rose-50/50 p-6 sm:p-8 rounded-3xl border border-amber-100 shadow-sm">
+        <div className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 space-y-3">
+          <div className="flex items-center justify-between pb-2">
+            <span className="text-xs font-bold text-slate-800">Live Alert Stream</span>
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+          </div>
+
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
+            <Bell size={18} className="text-amber-600 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-amber-900">Reorder Threshold Reached</p>
+              <p className="text-[11px] text-amber-700">Insulin Glargine — 4 units remaining</p>
+            </div>
+          </div>
+
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3">
+            <AlertCircle size={18} className="text-rose-600 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-rose-900">Critical Expiry Warning</p>
+              <p className="text-[11px] text-rose-700">Ciprofloxacin 250mg — Expires in 12 days</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* FEATURE 4: Prescription Management */}
+    <div className="grid lg:grid-cols-2 gap-12 items-center lg:flex-row-reverse">
+      <div className="lg:order-2">
+        <div className="w-12 h-12 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center mb-6">
+          <FileText size={24} />
+        </div>
+        <span className="text-xs font-extrabold uppercase tracking-wider text-violet-600">04. Patient Care</span>
+        <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 mb-4">
+          Digital Prescription Lifecycle & Refills
+        </h3>
+        <p className="text-slate-500 text-base leading-relaxed mb-6">
+          Streamline doctor intake, verify dosages, track refills, and store patient prescription histories securely in full compliance with healthcare regulations.
+        </p>
+        <ul className="space-y-3 mb-8">
+          {[
+            'Digital prescription intake & doctor notes',
+            'Automated refill reminders & patient records',
+            'Controlled substance tracking and audit logs',
+          ].map((bullet) => (
+            <li key={bullet} className="flex items-center gap-3 text-sm text-slate-700 font-medium">
+              <CheckCircle2 size={16} className="text-violet-500 flex-shrink-0" />
+              {bullet}
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 text-violet-600 font-bold text-sm hover:text-violet-700"
+        >
+          Discover Prescription Tools <ArrowUpRight size={16} />
+        </Link>
+      </div>
+
+      {/* Prescription Visual */}
+      <div className="lg:order-1 bg-gradient-to-br from-violet-50/80 to-purple-50/50 p-6 sm:p-8 rounded-3xl border border-violet-100 shadow-sm">
+        <div className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 space-y-3">
+          <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+            <span className="text-xs font-bold text-slate-800">Digital Rx #89042</span>
+            <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">VERIFIED</span>
+          </div>
+
+          <div className="text-xs space-y-1">
+            <p className="text-slate-500">Patient: <strong className="text-slate-800">Johnathan Doe</strong></p>
+            <p className="text-slate-500">Prescriber: <strong className="text-slate-800">Dr. E. Vance, MD</strong></p>
+            <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 mt-2 font-mono text-[11px] text-slate-700">
+              Rx: Lisinopril 10mg — Take 1 tablet daily (30-day supply)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+/* ══════════════════════════════════════════════════════════════════════
+   SOCIAL PROOF & TESTIMONIALS
+══════════════════════════════════════════════════════════════════════ */
+const TestimonialsSection: React.FC = () => (
+  <section id="testimonials" className="py-20 bg-slate-900 text-white overflow-hidden relative">
+    {/* Subtle emerald gradient glow */}
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-emerald-500/10 rounded-full filter blur-[100px] pointer-events-none" />
+
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      
+      {/* Stat Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20 text-center border-b border-slate-800 pb-16">
+        {STATS.map((s) => (
+          <div key={s.label}>
+            <p className="text-3xl sm:text-4xl font-extrabold text-emerald-400 tracking-tight mb-1">{s.value}</p>
+            <p className="text-xs sm:text-sm text-slate-400 font-medium">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Main Testimonial */}
+      <div className="max-w-3xl mx-auto text-center">
+        <div className="inline-flex items-center gap-1 mb-6 text-amber-400">
+          {[...Array(5)].map((_, i) => (
+            <Star key={i} size={18} fill="currentColor" />
+          ))}
+        </div>
+
+        <blockquote className="text-xl sm:text-2xl font-medium leading-relaxed mb-8 text-slate-200 italic">
+          "PharmaSys transformed how we manage our multi-branch pharmacy group. FEFO batch tracking alone saved us over $14,000 in expired inventory within our first quarter."
+        </blockquote>
+
+        <div className="flex items-center justify-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 font-bold text-base">
+            SM
+          </div>
+          <div className="text-left">
+            <p className="font-bold text-white text-base">Dr. Sarah M., PharmD</p>
+            <p className="text-xs text-slate-400">Chief Managing Pharmacist • CityMed Pharmacy Group</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+/* ══════════════════════════════════════════════════════════════════════
    CTA BANNER
 ══════════════════════════════════════════════════════════════════════ */
 const CTABanner: React.FC = () => (
-  <section id="pricing" className="px-4 sm:px-6 lg:px-8 pb-24">
-    <div className="max-w-7xl mx-auto">
+  <section className="px-4 sm:px-6 lg:px-8 py-20 bg-slate-50">
+    <div className="max-w-5xl mx-auto">
       <div
         style={{
           background: 'linear-gradient(135deg, #059669 0%, #0d9488 50%, #14b8a6 100%)',
-          borderRadius: '3rem',
-          boxShadow: '0 24px 80px rgba(5,150,105,0.35)',
+          boxShadow: '0 20px 60px rgba(5,150,105,0.30)',
         }}
-        className="relative overflow-hidden px-8 py-16 sm:py-20 text-center"
+        className="rounded-[2.5rem] p-10 sm:p-14 text-center text-white relative overflow-hidden"
       >
-        {/* Decorative white circles */}
-        <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -right-20 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute top-10 right-32 w-32 h-32 rounded-full bg-white/[0.07] blur-2xl pointer-events-none" />
-        <div className="absolute bottom-8 left-24 w-24 h-24 rounded-full bg-white/[0.06] blur-2xl pointer-events-none" />
-
-        {/* Content */}
         <div className="relative z-10">
-          <h2
-            className="font-extrabold text-white tracking-tight mb-4"
-            style={{ fontSize: 'clamp(26px, 4vw, 48px)' }}
-          >
-            Ready to modernize<br className="hidden sm:block" /> your pharmacy?
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
+            Ready to Modernize Your Pharmacy Operations?
           </h2>
-          <p className="text-emerald-100 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            Join 500+ pharmacies already using PharmaSys to deliver better
-            patient care and run smarter operations.
+          <p className="text-emerald-100 text-base sm:text-lg mb-8 max-w-xl mx-auto">
+            Get started in 5 minutes with full demo access. No credit card required.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               to="/login"
-              className="px-8 py-4 rounded-full font-bold text-emerald-700 bg-white hover:bg-emerald-50 hover:scale-105 shadow-lg hover:shadow-xl transition-all duration-200 text-[15px]"
+              className="px-8 py-4 rounded-full font-bold text-emerald-700 bg-white hover:bg-emerald-50 hover:scale-105 transition-all shadow-lg text-sm"
             >
-              Start 14-Day Free Trial
+              Start Free Trial Now
             </Link>
-            <button
-              style={{ border: '2px solid rgba(255,255,255,0.45)' }}
-              className="px-8 py-4 rounded-full font-semibold text-white hover:bg-white/15 hover:border-white/70 hover:scale-105 transition-all duration-200 text-[15px]"
+            <Link
+              to="/login"
+              className="px-8 py-4 rounded-full font-semibold text-white border-2 border-white/40 hover:border-white hover:bg-white/10 hover:scale-105 transition-all text-sm"
             >
-              Schedule a Demo
-            </button>
+              Sign In to Demo Account
+            </Link>
           </div>
         </div>
       </div>
@@ -600,47 +782,47 @@ const CTABanner: React.FC = () => (
    FOOTER
 ══════════════════════════════════════════════════════════════════════ */
 const Footer: React.FC = () => (
-  <footer
-    id="contact"
-    style={{ borderTop: '1px solid rgba(226,232,240,0.8)', background: 'rgba(255,255,255,0.7)' }}
-    className="py-10"
-  >
+  <footer className="bg-white border-t border-slate-200 py-12">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2.5">
           <div
             style={{ background: 'linear-gradient(135deg, #059669 0%, #14b8a6 100%)' }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            className="w-7 h-7 rounded-lg flex items-center justify-center shadow-xs"
           >
-            <Link2 size={13} color="#fff" strokeWidth={2.5} />
+            <Link2 size={14} color="#fff" strokeWidth={2.5} />
           </div>
-          <span className="font-extrabold text-sm tracking-tight">
+          <span className="font-extrabold text-base tracking-tight">
             <span className="text-slate-900">Pharma</span>
             <span className="text-emerald-600">Sys</span>
           </span>
         </Link>
-        <p className="text-xs text-slate-400 font-medium">
-          © 2026 PharmaSys. All rights reserved.
-        </p>
-        <div className="flex items-center gap-6">
-          {['Privacy', 'Terms', 'Support'].map((l) => (
-            <a
-              key={l}
-              href="#"
-              className="text-xs text-slate-400 hover:text-emerald-600 font-medium transition-colors"
-            >
-              {l}
+
+        {/* Footer Nav Links */}
+        <div className="flex flex-wrap justify-center gap-6 text-sm font-medium text-slate-500">
+          {NAV_LINKS.map((l) => (
+            <a key={l.name} href={l.href} className="hover:text-emerald-600 transition-colors">
+              {l.name}
             </a>
           ))}
+          <Link to="/login" className="hover:text-emerald-600 transition-colors">
+            Sign In
+          </Link>
         </div>
+
+        {/* Copyright */}
+        <p className="text-xs text-slate-400">
+          © {new Date().getFullYear()} PharmaSys Inc. All rights reserved. B2B Pharmacy Platform.
+        </p>
       </div>
     </div>
   </footer>
 );
 
 /* ══════════════════════════════════════════════════════════════════════
-   MAIN EXPORT
+   MAIN EXPORT: LANDING PAGE
 ══════════════════════════════════════════════════════════════════════ */
 export const Landing: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -653,35 +835,19 @@ export const Landing: React.FC = () => {
   }, []);
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        fontFamily: "'Inter', sans-serif",
-        background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 35%, rgba(236,253,245,0.25) 100%)',
-        position: 'relative',
-      }}
-    >
-      {/* Global keyframes for this page */}
+    <div className="min-h-screen font-sans bg-white text-slate-900 relative">
       <style>{`
         @keyframes bubble-float {
-          0%, 100% { transform: translateY(0px);  }
-          50%       { transform: translateY(-9px); }
-        }
-        @keyframes bar-grow-92 {
-          from { width: 0%; } to { width: 92%; }
-        }
-        @keyframes bar-grow-15 {
-          from { width: 0%; } to { width: 15%; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-8px); }
         }
       `}</style>
 
       <Navbar scrolled={scrolled} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
       <HeroSection />
-      <StatsBar />
-      <FeaturesSection />
+      <TrustBenefitStrip />
+      <FeatureSections />
+      <TestimonialsSection />
       <CTABanner />
       <Footer />
     </div>
