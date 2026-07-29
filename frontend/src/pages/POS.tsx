@@ -273,8 +273,22 @@ export const POS: React.FC = () => {
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:#2D3748; border-radius:99px; }
         @media print {
-          body > *:not(#receipt-print) { display:none !important; }
-          #receipt-print { display:block !important; }
+          body > * { display:none !important; }
+          body > * > * { display:none !important; }
+          body > * > * > * { display:none !important; }
+          #receipt-print,
+          #receipt-print * { display:revert !important; visibility:visible !important; }
+          #receipt-print {
+            position:fixed !important;
+            inset:0 !important;
+            margin:0 auto !important;
+            padding:24px !important;
+            max-width:400px !important;
+            border-radius:0 !important;
+            box-shadow:none !important;
+            z-index:99999 !important;
+            background:#fff !important;
+          }
         }
       `}</style>
 
