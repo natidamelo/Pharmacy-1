@@ -17,7 +17,11 @@ const fadeUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: i * 0.12 },
+    transition: {
+      duration: 0.55,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+      delay: i * 0.12,
+    },
   }),
 };
 
@@ -26,7 +30,7 @@ const cardHover = {
   hover: {
     y: -5,
     boxShadow: '0 16px 40px rgba(13,148,136,0.35)',
-    transition: { duration: 0.25, ease: 'easeOut' },
+    transition: { duration: 0.25, ease: 'easeOut' as const },
   },
 };
 
@@ -321,9 +325,10 @@ export const Login: React.FC = () => {
               {features.map((f, i) => (
                 <motion.div
                   key={f.title}
-                  custom={4 + i} variants={fadeUp} initial="hidden" animate="visible"
-                  whileHover="hover" initial2="rest"
-                  variants2={cardHover}
+                  custom={4 + i}
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="visible"
                 >
                   <motion.div
                     variants={cardHover}
