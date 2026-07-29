@@ -6,19 +6,52 @@
    These generate utility classes like bg-primary, text-ink, etc.
    ───────────────────────────────────────────── */
 @theme {
-  --color-bg:           #F5F7F6;
-  --color-ink:          #15191C;
-  --color-ink-muted:    #4A5568;
-  --color-ink-subtle:   #718096;
-  --color-primary:      #0F6E5C;
-  --color-primary-dark: #0a5245;
-  --color-warning:      #C17A1F;
-  --color-danger:       #C0392B;
-  --color-danger-light: #a93226;
-  --color-border:       #DDE4E2;
-  --color-surface:      #FFFFFF;
-  --color-surface-hover:#F8FAF9;
+  /* ── Light app theme (Dashboard, POS, etc.) ────────────────────── */
+  --color-bg:              #F5F7F6;
+  --color-ink:             #15191C;
+  --color-ink-muted:       #4A5568;
+  --color-ink-subtle:      #718096;
+  --color-primary:         #0F6E5C;
+  --color-primary-mid:     #0d9488;
+  --color-primary-light:   #34d399;
+  --color-primary-dark:    #0a5245;
+  --color-warning:         #C17A1F;
+  --color-danger:          #C0392B;
+  --color-danger-light:    #a93226;
+  --color-border:          #DDE4E2;
+  --color-surface:         #FFFFFF;
+  --color-surface-hover:   #F8FAF9;
 
+  /* ── Dark login theme ──────────────────────────────────────────── */
+  /* Page backgrounds */
+  --color-dark-bg:         #070B16;
+  --color-dark-bg-mid:     #0C1424;
+
+  /* Raised surfaces (cards, panels) */
+  --color-dark-surface:    #141C30;
+  --color-dark-surface-2:  #1B2540;
+
+  /* Secondary accent — indigo / violet */
+  --color-indigo:          #6366F1;
+  --color-indigo-light:    #818CF8;
+  --color-indigo-dim:      rgba(99, 102, 241, 0.15);
+  --color-indigo-glow:     rgba(99, 102, 241, 0.22);
+
+  /* Semantic alert accent — amber */
+  --color-amber:           #F59E0B;
+  --color-amber-dim:       rgba(245, 158, 11, 0.15);
+  --color-amber-border:    rgba(245, 158, 11, 0.35);
+
+  /* Dark text scale */
+  --color-dark-heading:    #F8FAFC;
+  --color-dark-body:       #94A3B8;
+  --color-dark-muted:      #64748B;
+
+  /* Dark inputs */
+  --color-dark-input-bg:   #060A14;
+  --color-dark-input-bdr:  rgba(255, 255, 255, 0.1);
+
+  /* Fonts */
   --font-display: 'Space Grotesk', sans-serif;
   --font-body:    'Inter', sans-serif;
   --font-mono:    'Space Mono', monospace;

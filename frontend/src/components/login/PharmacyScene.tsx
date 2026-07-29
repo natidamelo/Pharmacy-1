@@ -60,12 +60,12 @@ function Molecule({ reducedMotion }: { reducedMotion: boolean }) {
 
   const atoms: Array<{ pos: [number, number, number]; r: number; color: string }> = useMemo(
     () => [
-      { pos: [0, 0, 0], r: 0.28, color: '#0d9488' },
-      { pos: [0.75, 0.45, 0.2], r: 0.16, color: '#34d399' },
-      { pos: [-0.7, 0.4, -0.1], r: 0.16, color: '#34d399' },
-      { pos: [0.3, -0.7, 0.3], r: 0.14, color: '#5eead4' },
-      { pos: [-0.4, -0.6, -0.3], r: 0.13, color: '#5eead4' },
-      { pos: [0.6, -0.3, -0.6], r: 0.12, color: '#99f6e4' },
+      { pos: [0, 0, 0],       r: 0.28, color: '#0d9488' },  // central — teal (brand core)
+      { pos: [0.75, 0.45, 0.2],  r: 0.16, color: '#818CF8' },  // violet satellite
+      { pos: [-0.7, 0.4, -0.1],  r: 0.16, color: '#6366F1' },  // indigo satellite
+      { pos: [0.3, -0.7, 0.3],   r: 0.14, color: '#34d399' },  // teal satellite
+      { pos: [-0.4, -0.6, -0.3], r: 0.13, color: '#818CF8' },  // violet satellite
+      { pos: [0.6, -0.3, -0.6],  r: 0.12, color: '#6366F1' },  // indigo satellite
     ],
     []
   );
@@ -128,10 +128,11 @@ function TorusKnotAccent({ reducedMotion }: { reducedMotion: boolean }) {
   return (
     <mesh ref={mesh} position={[2.5, -1.2, -2]} scale={0.55}>
       <torusKnotGeometry args={[1, 0.28, 128, 16, 2, 3]} />
+      {/* Indigo/violet — secondary accent on 3D rim element */}
       <MeshDistortMaterial
-        color="#0F6E5C"
-        roughness={0.2}
-        metalness={0.7}
+        color="#6366F1"
+        roughness={0.18}
+        metalness={0.75}
         distort={reducedMotion ? 0 : 0.15}
         speed={reducedMotion ? 0 : 1.5}
         opacity={0.55}
@@ -163,8 +164,9 @@ function SphereRing({ reducedMotion }: { reducedMotion: boolean }) {
       {positions.map((pos, i) => (
         <mesh key={i} position={pos}>
           <sphereGeometry args={[0.06 + (i % 3) * 0.025, 16, 16]} />
+          {/* Alternate teal / indigo on ring beads */}
           <meshStandardMaterial
-            color={i % 2 === 0 ? '#0d9488' : '#34d399'}
+            color={i % 2 === 0 ? '#0d9488' : '#818CF8'}
             roughness={0.1}
             metalness={0.8}
             opacity={0.6 + (i % 3) * 0.1}
@@ -172,9 +174,9 @@ function SphereRing({ reducedMotion }: { reducedMotion: boolean }) {
           />
         </mesh>
       ))}
-      {/* Torus ring itself */}
+      {/* Torus ring — violet trace */}
       <Torus args={[2.1, 0.025, 8, 64]} rotation={[0, 0, 0]}>
-        <meshStandardMaterial color="#0d9488" opacity={0.2} transparent metalness={0.9} roughness={0.1} />
+        <meshStandardMaterial color="#818CF8" opacity={0.22} transparent metalness={0.9} roughness={0.1} />
       </Torus>
     </group>
   );
@@ -194,21 +196,25 @@ export function PharmacyScene({ mouseX, mouseY, isMobile, reducedMotion }: Pharm
 
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.4} />
-      <pointLight position={[5, 5, 5]} intensity={60} color="#34d399" />
-      <pointLight position={[-5, -3, 3]} intensity={40} color="#0d9488" />
-      <pointLight position={[0, 8, -4]} intensity={30} color="#5eead4" />
-      <directionalLight position={[3, 5, 2]} intensity={1.5} color="#ffffff" castShadow />
+      {/* Lighting — teal key + indigo/violet rim lights */}
+      <ambientLight intensity={0.35} />
+      {/* Key light: warm teal, main illumination */}
+      <pointLight position={[5, 5, 5]}   intensity={55} color="#34d399" />
+      {/* Rim light: indigo — secondary accent colour family */}
+      <pointLight position={[-5, -3, 3]} intensity={45} color="#6366F1" />
+      {/* Fill light: violet — adds depth, picks up on satellite spheres */}
+      <pointLight position={[0, 8, -4]}  intensity={35} color="#818CF8" />
+      {/* Neutral directional for shadows */}
+      <directionalLight position={[3, 5, 2]} intensity={1.4} color="#ffffff" castShadow />
 
       {/* Central molecule */}
       <Molecule reducedMotion={reducedMotion} />
 
-      {/* Pill cluster — orbiting the molecule */}
-      <Pill position={[-1.8, 0.6, 0.4]}  rotation={[0.8, 0.4, 0.2]}  color="#0F6E5C" reducedMotion={reducedMotion} speed={0.8} floatAmplitude={0.5} />
-      <Pill position={[1.9, -0.5, 0.2]}  rotation={[0.3, 1.1, 0.6]}  color="#0d9488" reducedMotion={reducedMotion} speed={1.1} floatAmplitude={0.35} />
-      <Pill position={[0.4, 1.8, -0.5]}  rotation={[1.2, 0.2, 0.9]}  color="#34d399" reducedMotion={reducedMotion} speed={0.65} floatAmplitude={0.6} />
-      <Pill position={[-0.8, -1.6, 0.6]} rotation={[0.5, 0.8, 1.4]}  color="#5eead4" reducedMotion={reducedMotion} speed={0.9} floatAmplitude={0.45} />
+      {/* Pill cluster — two teal, two indigo/violet */}
+      <Pill position={[-1.8, 0.6, 0.4]}  rotation={[0.8, 0.4, 0.2]}  color="#0F6E5C" reducedMotion={reducedMotion} speed={0.8}  floatAmplitude={0.5}  />
+      <Pill position={[1.9, -0.5, 0.2]}  rotation={[0.3, 1.1, 0.6]}  color="#6366F1" reducedMotion={reducedMotion} speed={1.1}  floatAmplitude={0.35} />
+      <Pill position={[0.4, 1.8, -0.5]}  rotation={[1.2, 0.2, 0.9]}  color="#818CF8" reducedMotion={reducedMotion} speed={0.65} floatAmplitude={0.6}  />
+      <Pill position={[-0.8, -1.6, 0.6]} rotation={[0.5, 0.8, 1.4]}  color="#0d9488" reducedMotion={reducedMotion} speed={0.9}  floatAmplitude={0.45} />
 
       {/* Sphere ring */}
       <SphereRing reducedMotion={reducedMotion} />
