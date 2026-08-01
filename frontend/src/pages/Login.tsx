@@ -55,7 +55,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between p-4 sm:p-6 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans" style={{ flex: 1 }}>
 
       {/* ── Soft background radial glows ── */}
       <div

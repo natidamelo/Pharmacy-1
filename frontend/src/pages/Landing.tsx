@@ -229,7 +229,7 @@ const Navbar: React.FC<NavbarProps> = ({ scrolled, menuOpen, setMenuOpen }) => (
    HERO DASHBOARD MOCKUP
 ══════════════════════════════════════════════════════════════════════ */
 const DashboardMockup: React.FC = () => (
-  <div className="relative w-full max-w-4xl mx-auto">
+  <div className="relative w-full max-w-3xl mx-auto">
     {/* Glow behind card */}
     <div
       className="absolute inset-0 rounded-3xl"
@@ -248,7 +248,6 @@ const DashboardMockup: React.FC = () => (
         border: '1px solid rgba(255,255,255,0.08)',
         backdropFilter: 'blur(20px)',
         boxShadow: '0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.03) inset',
-        transform: 'perspective(1400px) rotateX(4deg)',
       }}
     >
       {/* Title bar */}
@@ -429,7 +428,7 @@ const HeroSection: React.FC = () => (
     {/* Content */}
     <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 pt-28 sm:pt-36 pb-16">
       {/* Text block — centered */}
-      <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-20">
+      <div className="max-w-3xl mx-auto mb-14 sm:mb-20" style={{ textAlign: 'center' }}>
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -451,7 +450,7 @@ const HeroSection: React.FC = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
           className="font-extrabold tracking-tight leading-[1.08] text-white mb-6"
-          style={{ fontSize: 'clamp(36px, 5.5vw, 72px)' }}
+          style={{ fontSize: 'clamp(36px, 5.5vw, 72px)', textAlign: 'center' }}
         >
           Pharmacy management,{' '}
           <span
@@ -472,6 +471,7 @@ const HeroSection: React.FC = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.35 }}
           className="text-base sm:text-lg text-slate-400 leading-relaxed mb-8 max-w-xl mx-auto"
+          style={{ textAlign: 'center' }}
         >
           Eliminate stockouts, automate FEFO dispensing, track prescriptions in real time, and scale multi-branch operations — all from one platform.
         </motion.p>
@@ -649,7 +649,8 @@ const FeaturesSection: React.FC = () => (
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.6 }}
-        className="text-center max-w-2xl mx-auto mb-14 sm:mb-20"
+        className="max-w-2xl mx-auto mb-14 sm:mb-20"
+        style={{ textAlign: 'center' }}
       >
         <div
           className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
@@ -749,7 +750,8 @@ const TrustSection: React.FC = () => (
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.6 }}
-        className="text-center max-w-2xl mx-auto mb-12 sm:mb-16"
+        className="max-w-2xl mx-auto mb-12 sm:mb-16"
+        style={{ textAlign: 'center' }}
       >
         <div
           className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
