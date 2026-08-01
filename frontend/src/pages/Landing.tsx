@@ -54,7 +54,7 @@ const STATS = [
 ];
 
 const FEATURES: {
-  icon: React.FC<{ size?: number; className?: string }>;
+  icon: React.FC<{ size?: number; className?: string; style?: React.CSSProperties }>;
   tag: string;
   title: string;
   desc: string;
