@@ -12,7 +12,7 @@ import {
 ══════════════════════════════════════════════════════════════════════ */
 const NAV_LINKS = [
   { name: 'Features', href: '#features' },
-  { name: 'Solutions', href: '#solutions' },
+  { name: 'Solutions', href: '#features' },
   { name: 'Testimonials', href: '#testimonials' },
   { name: 'Trust & Security', href: '#trust' },
 ];
@@ -292,7 +292,7 @@ const HeroDashboardVisual: React.FC = () => (
    HERO SECTION
 ══════════════════════════════════════════════════════════════════════ */
 const HeroSection: React.FC = () => (
-  <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden relative">
+  <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 relative">
     {/* Soft background ambient gradient */}
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
       <div
