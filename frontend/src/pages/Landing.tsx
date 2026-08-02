@@ -1,121 +1,102 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   Package, BarChart3, Bell, FileText, Shield,
-  Link2, ArrowRight, Star, CheckCircle2, TrendingUp,
+  Link2, ArrowRight, Star, CheckCircle2,
   Menu, X, AlertCircle, Zap, Headphones,
-  Clock, ChevronRight, ArrowUpRight, Lock
+  Clock, ArrowUpRight, Sparkles, Check
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════════════════
-   GLOBAL KEYFRAMES
+   APOTHECARY COLOR SYSTEM & STYLES
+   Ink: #1C2029 | Porcelain: #EEF0EC | Amber Glass: #C1791F
+   Apothecary Sage: #4C6357 | Alert Brick: #A23B2E | Mist: #D7DBD3
 ══════════════════════════════════════════════════════════════════════ */
+const TOKENS = {
+  ink: '#1C2029',
+  porcelain: '#EEF0EC',
+  amber: '#C1791F',
+  amberDim: 'rgba(193, 121, 31, 0.12)',
+  sage: '#4C6357',
+  sageDim: 'rgba(76, 99, 87, 0.12)',
+  brick: '#A23B2E',
+  brickDim: 'rgba(162, 59, 46, 0.12)',
+  mist: '#D7DBD3',
+  white: '#FFFFFF',
+};
+
 const KEYFRAMES = `
-  @keyframes orb-drift-1 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33%      { transform: translate(40px, -30px) scale(1.08); }
-    66%      { transform: translate(-25px, 20px) scale(0.95); }
-  }
-  @keyframes orb-drift-2 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33%      { transform: translate(-35px, 25px) scale(0.92); }
-    66%      { transform: translate(30px, -20px) scale(1.06); }
-  }
-  @keyframes pulse-ring {
-    0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.35); }
-    70%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
-    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
-  }
-  @keyframes shimmer {
-    0%   { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  @keyframes float-badge {
-    0%, 100% { transform: translateY(0px); }
-    50%      { transform: translateY(-6px); }
-  }
+  .fefo-scrollbar::-webkit-scrollbar { width: 5px; }
+  .fefo-scrollbar::-webkit-scrollbar-track { background: rgba(215, 219, 211, 0.3); border-radius: 4px; }
+  .fefo-scrollbar::-webkit-scrollbar-thumb { background: #4C6357; border-radius: 4px; }
 `;
 
 /* ══════════════════════════════════════════════════════════════════════
-   DATA & CONSTANTS
+   NAVIGATION DATA
 ══════════════════════════════════════════════════════════════════════ */
 const NAV_LINKS = [
   { name: 'Features', href: '#features' },
   { name: 'Testimonials', href: '#testimonials' },
   { name: 'Security', href: '#trust' },
+  { name: 'Pricing', href: '#pricing' },
 ];
 
 const STATS = [
   { value: '500+', label: 'Active Pharmacies' },
-  { value: '2M+', label: 'Prescriptions Filled' },
-  { value: '99.99%', label: 'Uptime Guarantee' },
-  { value: '50+', label: 'Countries Supported' },
+  { value: '2M+', label: 'Prescriptions Dispensed' },
+  { value: '99.99%', label: 'FEFO Compliance Rate' },
+  { value: '0.00%', label: 'Expired Stock Waste' },
 ];
 
-const FEATURES: {
-  icon: React.FC<{ size?: number; className?: string; style?: React.CSSProperties }>;
-  tag: string;
-  title: string;
-  desc: string;
-  accent: string;
-  accentBg: string;
-  bullets: string[];
-}[] = [
+const FEATURES = [
   {
     icon: Package,
-    tag: 'Smart Inventory',
-    title: 'FEFO Dispensing & Batch Tracking',
-    desc: 'Automatically prioritize inventory by expiration. Eliminate waste with intelligent First-Expired-First-Out dispensing at every checkout.',
-    accent: '#10B981',
-    accentBg: 'rgba(16,185,129,0.07)',
-    bullets: ['Auto batch selection at POS', 'Expiration countdown alerts', 'Barcode scan verification'],
+    tag: 'FEFO Queue System',
+    title: 'First-Expired, First-Out Queueing',
+    desc: 'Visually prioritizes medication by batch expiration date. Ensures shortest shelf-life stock is dispensed first at checkout automatically.',
+    accent: TOKENS.amber,
+    accentBg: TOKENS.amberDim,
+    bullets: ['Automatic batch prioritization', 'Expiration countdown alerts', 'Barcode scan verification at POS'],
   },
   {
     icon: BarChart3,
-    tag: 'Business Intelligence',
-    title: 'Real-Time Revenue Analytics',
-    desc: 'Full visibility into sales, margins, and trends across all branches with live operational dashboards.',
-    accent: '#3B82F6',
-    accentBg: 'rgba(59,130,246,0.07)',
-    bullets: ['Daily / weekly / monthly views', 'Profit margin per product', 'Export-ready financial reports'],
+    tag: 'Inventory Intelligence',
+    title: 'Real-Time Revenue & Margins',
+    desc: 'Live operational visibility across every branch. Track cost per dosage, profit margins, and peak turnover cycles effortlessly.',
+    accent: TOKENS.sage,
+    accentBg: TOKENS.sageDim,
+    bullets: ['Daily & monthly gross margins', 'Category-level turnover velocity', 'Exportable audit & tax reports'],
   },
   {
     icon: Bell,
     tag: 'Automated Safeguards',
-    title: 'Smart Stock & Expiry Alerts',
-    desc: 'Never run out of critical medication. Automated notifications for low stock and approaching expirations.',
-    accent: '#F59E0B',
-    accentBg: 'rgba(245,158,11,0.07)',
-    bullets: ['Custom reorder thresholds', '30 / 60 / 90-day warnings', 'One-click purchase orders'],
+    title: 'Smart Stock & Reorder Warning',
+    desc: 'Proactive threshold triggers alert staff before items hit critical levels. One-click purchase orders streamline supplier restocking.',
+    accent: TOKENS.brick,
+    accentBg: TOKENS.brickDim,
+    bullets: ['Dynamic reorder point calculation', '30 / 60 / 90-day expiry warning', 'Automated PO generation'],
   },
   {
     icon: FileText,
-    tag: 'Patient Care',
+    tag: 'Patient Safety',
     title: 'Digital Prescription Lifecycle',
-    desc: 'Streamline intake, verify dosages, track refills, and store patient histories in full regulatory compliance.',
-    accent: '#8B5CF6',
-    accentBg: 'rgba(139,92,246,0.07)',
-    bullets: ['Digital Rx intake & notes', 'Automated refill reminders', 'Controlled substance logs'],
+    desc: 'Complete workflow from intake to dispensing. Track patient history, verify dosages, and maintain full compliance.',
+    accent: TOKENS.sage,
+    accentBg: TOKENS.sageDim,
+    bullets: ['Digital Rx verification & logs', 'Controlled substance audit trails', 'Automated SMS refill reminders'],
   },
 ];
 
 const TRUST_ITEMS = [
-  { icon: Clock, title: '5-Min Onboarding', desc: 'Instant cloud setup with automated legacy-data import.' },
-  { icon: Shield, title: 'HIPAA & Audit Ready', desc: 'Bank-grade 256-bit encryption. Immutable audit trails.' },
-  { icon: Zap, title: '99.99% Uptime SLA', desc: 'Multi-region cloud for uninterrupted dispensing.' },
-  { icon: Headphones, title: '24/7 Expert Support', desc: 'Dedicated pharmacy IT specialists, always on call.' },
+  { icon: Clock, title: '5-Minute Setup', desc: 'Instant cloud migration with legacy data import helpers.' },
+  { icon: Shield, title: 'HIPAA & Regulatory Ready', desc: '256-bit encryption with immutable audit logs.' },
+  { icon: Zap, title: '99.99% Uptime SLA', desc: 'Redundant cloud infrastructure built for uninterrupted dispensing.' },
+  { icon: Headphones, title: '24/7 Pharmacy Support', desc: 'Direct support from certified pharmacy tech experts.' },
 ];
 
 /* ══════════════════════════════════════════════════════════════════════
-   SHARED STYLES
-══════════════════════════════════════════════════════════════════════ */
-const GRAD = 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)';
-const DARK = '#080D19';
-const DARK2 = '#0C1222';
-
-/* ══════════════════════════════════════════════════════════════════════
-   NAVBAR
+   NAVBAR COMPONENT
 ══════════════════════════════════════════════════════════════════════ */
 interface NavbarProps { scrolled: boolean; menuOpen: boolean; setMenuOpen: (v: boolean) => void }
 
@@ -123,63 +104,72 @@ const Navbar: React.FC<NavbarProps> = ({ scrolled, menuOpen, setMenuOpen }) => (
   <nav
     style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-      transition: 'all 0.4s cubic-bezier(.4,0,.2,1)',
-      background: scrolled ? 'rgba(8,13,25,0.82)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(20px) saturate(1.4)' : 'none',
-      WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(1.4)' : 'none',
-      borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+      transition: 'all 0.3s ease',
+      background: scrolled ? 'rgba(28, 32, 41, 0.94)' : 'rgba(238, 240, 236, 0.88)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      borderBottom: scrolled ? `1px solid rgba(215, 219, 211, 0.15)` : `1px solid ${TOKENS.mist}`,
     }}
   >
     <div className="max-w-7xl mx-auto px-5 sm:px-8">
       <div className="flex items-center justify-between h-16 sm:h-20">
-
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
+        <Link to="/" className="flex items-center gap-2.5 flex-shrink-0 group">
           <div
-            style={{ background: GRAD, boxShadow: '0 0 20px rgba(16,185,129,0.25)' }}
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: TOKENS.amber, boxShadow: '0 4px 12px rgba(193, 121, 31, 0.25)' }}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
           >
-            <Link2 size={16} color="#fff" strokeWidth={2.5} />
+            <Link2 size={18} color="#FFF" strokeWidth={2.5} />
           </div>
-          <span className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
-            Pharma<span style={{ color: '#10B981' }}>Sys</span>
+          <span
+            className="text-lg sm:text-xl font-bold tracking-tight"
+            style={{ fontFamily: "'DM Serif Display', serif", color: scrolled ? TOKENS.porcelain : TOKENS.ink }}
+          >
+            Pharma<span style={{ color: TOKENS.amber }}>Sys</span>
           </span>
         </Link>
 
-        {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-7">
+        {/* Navigation Links */}
+        <div className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((l) => (
             <a
               key={l.name}
               href={l.href}
-              className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
+              className="text-sm font-medium transition-colors hover:text-[#C1791F]"
+              style={{ color: scrolled ? 'rgba(238, 240, 236, 0.8)' : TOKENS.ink }}
             >
               {l.name}
             </a>
           ))}
         </div>
 
-        {/* Desktop CTAs */}
+        {/* Action CTAs */}
         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
           <Link
             to="/login"
-            className="text-sm font-semibold text-slate-300 hover:text-white transition-colors px-3 py-2"
+            className="text-sm font-semibold transition-colors px-3.5 py-2 rounded-lg"
+            style={{ color: scrolled ? TOKENS.porcelain : TOKENS.ink }}
           >
             Sign In
           </Link>
           <Link
             to="/login"
-            style={{ background: GRAD, boxShadow: '0 4px 20px rgba(16,185,129,0.3)' }}
-            className="px-5 py-2.5 rounded-full text-sm font-bold text-white hover:scale-105 hover:shadow-lg transition-all duration-200"
+            style={{
+              background: TOKENS.amber,
+              color: TOKENS.white,
+              boxShadow: '0 4px 16px rgba(193, 121, 31, 0.28)',
+            }}
+            className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 hover:shadow-lg"
           >
-            Start Free Trial
+            Book a Demo
           </Link>
         </div>
 
-        {/* Mobile toggle */}
+        {/* Mobile menu button */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white transition-colors"
+          className="md:hidden p-2 rounded-lg transition-colors"
+          style={{ color: scrolled ? TOKENS.porcelain : TOKENS.ink }}
           aria-label="Toggle menu"
         >
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -189,34 +179,34 @@ const Navbar: React.FC<NavbarProps> = ({ scrolled, menuOpen, setMenuOpen }) => (
       {/* Mobile dropdown */}
       {menuOpen && (
         <div
-          className="md:hidden py-4 space-y-1 rounded-b-2xl px-2"
-          style={{ background: 'rgba(8,13,25,0.96)', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+          className="md:hidden py-4 px-2 space-y-2 rounded-b-2xl border-t shadow-xl"
+          style={{ background: TOKENS.ink, borderColor: 'rgba(215, 219, 211, 0.15)' }}
         >
           {NAV_LINKS.map((l) => (
             <a
               key={l.name}
               href={l.href}
               onClick={() => setMenuOpen(false)}
-              className="block px-4 py-3 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+              className="block px-4 py-2.5 text-sm font-medium rounded-xl text-slate-200 hover:text-white hover:bg-white/10"
             >
               {l.name}
             </a>
           ))}
-          <div className="pt-3 border-t border-white/5 space-y-2 mt-2">
+          <div className="pt-3 border-t border-white/10 space-y-2">
             <Link
               to="/login"
               onClick={() => setMenuOpen(false)}
-              className="block px-4 py-3 text-sm font-semibold text-slate-300 hover:text-white text-center rounded-xl"
+              className="block px-4 py-2.5 text-sm font-semibold text-slate-300 text-center rounded-xl"
             >
               Sign In
             </Link>
             <Link
               to="/login"
               onClick={() => setMenuOpen(false)}
-              style={{ background: GRAD }}
-              className="block px-5 py-3 rounded-full text-sm font-bold text-center text-white shadow-lg"
+              style={{ background: TOKENS.amber, color: TOKENS.white }}
+              className="block px-5 py-3 rounded-xl text-sm font-bold text-center shadow-lg"
             >
-              Start Free Trial
+              Book a Demo
             </Link>
           </div>
         </div>
@@ -226,351 +216,355 @@ const Navbar: React.FC<NavbarProps> = ({ scrolled, menuOpen, setMenuOpen }) => (
 );
 
 /* ══════════════════════════════════════════════════════════════════════
-   HERO DASHBOARD MOCKUP
+   SIGNATURE ELEMENT: 3D FEFO SHELF COMPONENT
+   Demonstrates "soonest-to-expire goes first" visually
 ══════════════════════════════════════════════════════════════════════ */
-const DashboardMockup: React.FC = () => (
-  <div className="relative w-full max-w-3xl mx-auto">
-    {/* Glow behind card */}
-    <div
-      className="absolute inset-0 rounded-3xl"
-      style={{
-        background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(6,182,212,0.10) 50%, rgba(139,92,246,0.08) 100%)',
-        filter: 'blur(40px)',
-        transform: 'scale(1.05)',
-      }}
-    />
+const FEFOShelfComponent: React.FC = () => {
+  const [, setActiveItemIndex] = useState(0);
 
-    {/* Main card */}
-    <div
-      className="relative rounded-2xl sm:rounded-3xl overflow-hidden"
-      style={{
-        background: 'rgba(15,22,41,0.85)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(20px)',
-        boxShadow: '0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.03) inset',
-      }}
-    >
-      {/* Title bar */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/5">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
-          <span className="text-[11px] text-slate-500 font-mono ml-3 hidden sm:inline">pharmasys-cloud v4.2</span>
-        </div>
-        <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ animation: 'pulse-ring 2s infinite' }} />
-          <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-400">Live</span>
-        </div>
-      </div>
+  const inventoryItems = [
+    { lot: 'LOT-9824', name: 'Amoxicillin 500mg', exp: '10/2026', days: 45, status: 'DISPENSE NEXT', count: '120 caps', priority: 1, alert: true },
+    { lot: 'LOT-9871', name: 'Metformin 850mg', exp: '04/2027', days: 240, status: 'Queue #2', count: '500 tabs', priority: 2, alert: false },
+    { lot: 'LOT-9902', name: 'Atorvastatin 20mg', exp: '11/2027', days: 450, status: 'Queue #3', count: '250 tabs', priority: 3, alert: false },
+    { lot: 'LOT-9945', name: 'Lisinopril 10mg', exp: '03/2028', days: 580, status: 'Queue #4', count: '1000 tabs', priority: 4, alert: false },
+  ];
 
-      {/* Dashboard content */}
-      <div className="p-4 sm:p-6 space-y-3">
-        {/* Metric row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-          <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] sm:text-[11px] text-slate-500">Revenue Today</span>
-              <TrendingUp size={12} className="text-emerald-400" />
-            </div>
-            <p className="text-base sm:text-lg font-extrabold text-white">$4,829</p>
-            <span className="text-[10px] font-bold text-emerald-400">+14.2%</span>
-          </div>
-
-          <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] sm:text-[11px] text-slate-500">Rx Verified</span>
-              <CheckCircle2 size={12} className="text-blue-400" />
-            </div>
-            <p className="text-base sm:text-lg font-extrabold text-white">184/190</p>
-            <span className="text-[10px] font-bold text-blue-400">96.8% FEFO</span>
-          </div>
-
-          <div className="hidden sm:block p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] text-slate-500">Active Alerts</span>
-              <Bell size={12} className="text-amber-400" />
-            </div>
-            <p className="text-lg font-extrabold text-white">3</p>
-            <span className="text-[10px] font-bold text-amber-400">2 low stock</span>
-          </div>
-        </div>
-
-        {/* FEFO chart */}
-        <div className="p-3.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="flex items-center justify-between mb-2.5">
-            <span className="text-xs font-bold text-slate-300">FEFO Stock Allocation</span>
-            <span className="text-[10px] text-slate-500">Auto-prioritized</span>
-          </div>
-          <div className="space-y-2">
-            <div>
-              <div className="flex justify-between text-[11px] text-slate-400 mb-1">
-                <span>Amoxicillin 500mg (Exp 10/26)</span>
-                <span className="text-emerald-400 font-bold">First Out</span>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                <div className="h-full rounded-full w-[85%]" style={{ background: GRAD }} />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-[11px] text-slate-400 mb-1">
-                <span>Metformin 850mg (Exp 04/27)</span>
-                <span className="text-slate-500 font-medium">Queue #2</span>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                <div className="h-full rounded-full bg-teal-500/60 w-[60%]" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* Floating alert badge */}
-    <div
-      className="absolute -top-3 -right-2 sm:right-4 z-10 hidden sm:block"
-      style={{ animation: 'float-badge 3s ease-in-out infinite' }}
-    >
+  return (
+    <div className="relative w-full max-w-2xl mx-auto">
+      {/* 3D Shelf Container */}
       <div
-        className="flex items-center gap-2 px-3 py-2 rounded-xl"
+        className="relative rounded-3xl p-5 sm:p-7 overflow-hidden transition-all"
         style={{
-          background: 'rgba(15,22,41,0.92)',
-          border: '1px solid rgba(239,68,68,0.2)',
-          backdropFilter: 'blur(12px)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          background: TOKENS.white,
+          border: `1.5px solid ${TOKENS.mist}`,
+          boxShadow: '0 20px 50px rgba(28, 32, 41, 0.08), 0 2px 6px rgba(28, 32, 41, 0.04)',
         }}
       >
-        <div className="w-6 h-6 rounded-lg bg-red-500/15 flex items-center justify-center">
-          <AlertCircle size={13} className="text-red-400" />
-        </div>
-        <div>
-          <p className="text-[11px] font-bold text-white leading-tight">Low Stock Alert</p>
-          <p className="text-[10px] text-slate-500">Amoxicillin 500mg</p>
-        </div>
-      </div>
-    </div>
+        {/* Top Status Header - No Overlap */}
+        <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-200/80">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ background: TOKENS.amber }} />
+            <span className="text-xs font-semibold text-slate-700 tracking-wide uppercase font-mono">
+              FEFO Shelf Queue · Real-time Priority
+            </span>
+          </div>
 
-    {/* Floating verified badge */}
-    <div
-      className="absolute -bottom-3 left-2 sm:left-6 z-10 hidden sm:block"
-      style={{ animation: 'float-badge 3.5s ease-in-out infinite 0.8s' }}
-    >
-      <div
-        className="flex items-center gap-2 px-3 py-2 rounded-xl"
-        style={{
-          background: 'rgba(15,22,41,0.92)',
-          border: '1px solid rgba(16,185,129,0.2)',
-          backdropFilter: 'blur(12px)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-        }}
-      >
-        <div className="w-6 h-6 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-          <CheckCircle2 size={13} className="text-emerald-400" />
+          <div
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold font-mono"
+            style={{
+              background: TOKENS.sageDim,
+              borderColor: 'rgba(76, 99, 87, 0.25)',
+              color: TOKENS.sage,
+            }}
+          >
+            <span className="w-2 h-2 rounded-full" style={{ background: TOKENS.sage }} />
+            Live Inventory
+          </div>
         </div>
+
+        {/* Hero Image Showcase with 3D Bottle Queue Overlay */}
+        <div className="relative rounded-2xl overflow-hidden mb-6 bg-slate-900 shadow-inner group">
+          <img
+            src="/fefo_shelf_hero.jpg"
+            alt="Pharmacy FEFO Shelf Queue"
+            className="w-full h-56 sm:h-64 object-cover object-center opacity-95 transition-transform duration-700 group-hover:scale-105"
+          />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'linear-gradient(to top, rgba(28, 32, 41, 0.85) 0%, rgba(28, 32, 41, 0.1) 60%, transparent 100%)',
+            }}
+          />
+
+          {/* Callout Overlay on Image */}
+          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between bg-white/95 backdrop-blur-md p-3.5 rounded-xl border border-white/40 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-white shadow"
+                style={{ background: TOKENS.amber }}
+              >
+                #1
+              </div>
+              <div>
+                <p className="text-xs font-extrabold text-slate-900 leading-tight">
+                  Soonest Expiry Pulled Forward
+                </p>
+                <p className="text-[11px] font-mono text-slate-500">
+                  Amoxicillin (Exp 10/26) · Automatic POS Dispatch
+                </p>
+              </div>
+            </div>
+            <span
+              className="px-2.5 py-1 rounded-md text-[11px] font-extrabold tracking-wide uppercase font-mono hidden sm:inline-block"
+              style={{ background: TOKENS.amberDim, color: TOKENS.amber }}
+            >
+              FEFO Priority
+            </span>
+          </div>
+        </div>
+
+        {/* FEFO Interactive Queue Panel (Fixes Overflow Bug with Scroll & Internal Container) */}
         <div>
-          <p className="text-[11px] font-bold text-emerald-400 leading-tight">FEFO Verified ✓</p>
-          <p className="text-[10px] text-slate-500">Zero expired items</p>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-slate-600">
+              Active Stock Queue (Expiring First Priority)
+            </h4>
+            <span className="text-[11px] font-mono text-slate-400">Scrollable queue</span>
+          </div>
+
+          <div
+            className="fefo-scrollbar space-y-2 overflow-y-auto max-h-[175px] pr-1.5"
+            style={{ scrollbarWidth: 'thin' }}
+          >
+            {inventoryItems.map((item, idx) => {
+              const isFirst = idx === 0;
+              return (
+                <div
+                  key={item.lot}
+                  onClick={() => setActiveItemIndex(idx)}
+                  className="flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border"
+                  style={{
+                    background: isFirst ? 'rgba(193, 121, 31, 0.05)' : TOKENS.white,
+                    borderColor: isFirst ? TOKENS.amber : TOKENS.mist,
+                    boxShadow: isFirst ? '0 4px 12px rgba(193, 121, 31, 0.1)' : 'none',
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-mono font-bold"
+                      style={{
+                        background: isFirst ? TOKENS.amber : TOKENS.mist,
+                        color: isFirst ? TOKENS.white : TOKENS.ink,
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs sm:text-sm font-bold text-slate-900">{item.name}</p>
+                        <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                          {item.lot}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-mono">
+                        Exp: <span className="font-bold text-slate-800">{item.exp}</span> ({item.days} days remaining)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span
+                      className="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold font-mono uppercase"
+                      style={{
+                        background: isFirst ? TOKENS.amber : TOKENS.sageDim,
+                        color: isFirst ? TOKENS.white : TOKENS.sage,
+                      }}
+                    >
+                      {item.status}
+                    </span>
+                    <p className="text-[10px] font-mono text-slate-400 mt-0.5">{item.count}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Alert Badges - Redesigned to avoid clipping at all breakpoints */}
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div
+          className="flex items-center gap-3 p-3 rounded-2xl border"
+          style={{
+            background: TOKENS.white,
+            borderColor: 'rgba(162, 59, 46, 0.25)',
+            boxShadow: '0 4px 12px rgba(162, 59, 46, 0.08)',
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: TOKENS.brickDim }}
+          >
+            <AlertCircle size={18} style={{ color: TOKENS.brick }} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-900">Low Stock Alert</p>
+            <p className="text-[11px] font-mono text-slate-500">Amoxicillin 500mg (12 units left)</p>
+          </div>
+        </div>
+
+        <div
+          className="flex items-center gap-3 p-3 rounded-2xl border"
+          style={{
+            background: TOKENS.white,
+            borderColor: 'rgba(76, 99, 87, 0.25)',
+            boxShadow: '0 4px 12px rgba(76, 99, 87, 0.08)',
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: TOKENS.sageDim }}
+          >
+            <CheckCircle2 size={18} style={{ color: TOKENS.sage }} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-900">FEFO Verified</p>
+            <p className="text-[11px] font-mono text-slate-500">Zero expired items in active stock</p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ══════════════════════════════════════════════════════════════════════
    HERO SECTION
 ══════════════════════════════════════════════════════════════════════ */
-const HeroSection: React.FC = () => (
-  <section className="relative min-h-screen flex flex-col justify-center overflow-hidden" style={{ background: DARK }}>
-    {/* Background layers */}
-    <div className="absolute inset-0 pointer-events-none" style={{ overflow: 'hidden' }}>
-      {/* Grid pattern */}
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)`,
-          backgroundSize: '64px 64px',
-        }}
-      />
-      {/* Gradient orbs */}
-      <div
-        className="absolute"
-        style={{
-          top: '-10%', left: '5%', width: '550px', height: '550px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 65%)',
-          filter: 'blur(60px)',
-          animation: 'orb-drift-1 18s ease-in-out infinite',
-        }}
-      />
-      <div
-        className="absolute"
-        style={{
-          bottom: '0%', right: '0%', width: '500px', height: '500px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(6,182,212,0.10) 0%, transparent 65%)',
-          filter: 'blur(60px)',
-          animation: 'orb-drift-2 22s ease-in-out infinite',
-        }}
-      />
-      <div
-        className="absolute"
-        style={{
-          top: '40%', left: '50%', width: '400px', height: '400px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 65%)',
-          filter: 'blur(60px)',
-          animation: 'orb-drift-1 25s ease-in-out infinite 5s',
-        }}
-      />
-      {/* Bottom fade to next section */}
-      <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: `linear-gradient(transparent, ${DARK})` }} />
-    </div>
+const HeroSection: React.FC = () => {
+  const shouldReduceMotion = useReducedMotion();
 
-    {/* Content */}
-    <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 pt-28 sm:pt-36 pb-16">
-      {/* Text block — centered */}
-      <div className="max-w-3xl mx-auto mb-14 sm:mb-20" style={{ textAlign: 'center' }}>
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6"
+  return (
+    <section
+      className="relative pt-28 sm:pt-36 pb-20 sm:pb-28 overflow-hidden"
+      style={{ background: TOKENS.porcelain }}
+    >
+      {/* Background Subtle Apothecary Texture */}
+      <div className="absolute inset-0 pointer-events-none opacity-40">
+        <div
+          className="absolute inset-0"
           style={{
-            border: '1px solid rgba(16,185,129,0.25)',
-            background: 'rgba(16,185,129,0.06)',
+            backgroundImage: `radial-gradient(${TOKENS.mist} 1px, transparent 1px)`,
+            backgroundSize: '32px 32px',
           }}
-        >
-          <span className="w-2 h-2 rounded-full bg-emerald-400" style={{ animation: 'pulse-ring 2s infinite' }} />
-          <span className="text-xs font-bold text-emerald-400 tracking-wide uppercase">Next-Gen Pharmacy Platform</span>
-        </motion.div>
-
-        {/* Heading */}
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-          className="font-extrabold tracking-tight leading-[1.08] text-white mb-6"
-          style={{ fontSize: 'clamp(36px, 5.5vw, 72px)', textAlign: 'center' }}
-        >
-          Pharmacy management,{' '}
-          <span
-            style={{
-              background: GRAD,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            reimagined.
-          </span>
-        </motion.h1>
-
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.35 }}
-          className="text-base sm:text-lg text-slate-400 leading-relaxed mb-8 max-w-xl mx-auto"
-          style={{ textAlign: 'center' }}
-        >
-          Eliminate stockouts, automate FEFO dispensing, track prescriptions in real time, and scale multi-branch operations — all from one platform.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.5 }}
-          className="flex flex-wrap justify-center gap-3.5 mb-10"
-        >
-          <Link
-            to="/login"
-            style={{ background: GRAD, boxShadow: '0 8px 30px rgba(16,185,129,0.3)' }}
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-bold text-white text-[15px] hover:scale-105 hover:shadow-xl transition-all duration-200"
-          >
-            Start Free Trial <ArrowRight size={16} />
-          </Link>
-          <Link
-            to="/login"
-            className="inline-flex items-center gap-1.5 px-6 py-3.5 rounded-full font-semibold text-slate-300 text-[15px] hover:text-white hover:bg-white/5 transition-all duration-200"
-            style={{ border: '1px solid rgba(255,255,255,0.12)' }}
-          >
-            Sign In to Demo <ChevronRight size={16} className="text-slate-500" />
-          </Link>
-        </motion.div>
-
-        {/* Social proof */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.7 }}
-          className="flex items-center justify-center gap-3.5"
-        >
-          <div className="flex -space-x-2.5">
-            {[
-              'linear-gradient(135deg,#10B981,#14B8A6)',
-              'linear-gradient(135deg,#3B82F6,#8B5CF6)',
-              'linear-gradient(135deg,#F59E0B,#EF4444)',
-              'linear-gradient(135deg,#6366F1,#06B6D4)',
-            ].map((bg, i) => (
-              <div
-                key={i}
-                className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-[9px] font-bold text-white"
-                style={{ background: bg, borderColor: DARK }}
-              >
-                {['DR', 'LM', 'RK', 'JP'][i]}
-              </div>
-            ))}
-          </div>
-          <div className="text-left">
-            <div className="flex items-center gap-0.5 mb-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={11} fill="#FBBF24" className="text-amber-400" />
-              ))}
-            </div>
-            <p className="text-xs text-slate-500">
-              <span className="font-bold text-slate-300">4.9/5</span> from 500+ pharmacists
-            </p>
-          </div>
-        </motion.div>
+        />
       </div>
 
-      {/* Dashboard mockup */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.9, delay: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-      >
-        <DashboardMockup />
-      </motion.div>
-    </div>
-  </section>
-);
+      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8">
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          {/* Left Column: Text & CTAs */}
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-6 text-center lg:text-left"
+          >
+            {/* Tag Badge */}
+            <div
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border mb-6"
+              style={{
+                background: TOKENS.sageDim,
+                borderColor: 'rgba(76, 99, 87, 0.25)',
+              }}
+            >
+              <Sparkles size={14} style={{ color: TOKENS.sage }} />
+              <span
+                className="text-xs font-bold tracking-wider uppercase font-mono"
+                style={{ color: TOKENS.sage }}
+              >
+                Apothecary-Grade Dispensing Engine
+              </span>
+            </div>
+
+            {/* Display Headline */}
+            <h1
+              className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 leading-[1.1]"
+              style={{ fontFamily: "'DM Serif Display', serif" }}
+            >
+              Precision pharmacy software,{' '}
+              <span style={{ color: TOKENS.amber, fontStyle: 'italic' }}>
+                grounded in FEFO.
+              </span>
+            </h1>
+
+            {/* Body Copy */}
+            <p className="text-base sm:text-lg text-slate-600 mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
+              Eliminate expired stock loss automatically. PharmaSys prioritizes shortest expiry batches first at checkout, tracks controlled substances, and simplifies multi-branch operations.
+            </p>
+
+            {/* Primary & Secondary CTAs */}
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mb-10">
+              <Link
+                to="/login"
+                style={{
+                  background: TOKENS.amber,
+                  color: TOKENS.white,
+                  boxShadow: '0 8px 24px rgba(193, 121, 31, 0.3)',
+                }}
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm sm:text-base transition-all hover:scale-105 hover:shadow-xl"
+              >
+                Book a Demo <ArrowRight size={18} />
+              </Link>
+              <a
+                href="#pricing"
+                style={{
+                  background: TOKENS.white,
+                  color: TOKENS.ink,
+                  border: `1.5px solid ${TOKENS.mist}`,
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm sm:text-base transition-all hover:bg-slate-50"
+              >
+                View Plans & Pricing
+              </a>
+            </div>
+
+            {/* Social Proof */}
+            <div className="flex items-center justify-center lg:justify-start gap-3.5 pt-4 border-t border-slate-300/60">
+              <div className="flex -space-x-2">
+                {['#C1791F', '#4C6357', '#1C2029', '#A23B2E'].map((bg, i) => (
+                  <div
+                    key={i}
+                    className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold text-white font-mono shadow-sm"
+                    style={{ background: bg }}
+                  >
+                    {['RX', 'MD', 'PH', 'CP'][i]}
+                  </div>
+                ))}
+              </div>
+              <div className="text-left">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={13} fill="#C1791F" style={{ color: TOKENS.amber }} />
+                  ))}
+                </div>
+                <p className="text-xs text-slate-600 font-medium">
+                  Trusted by <span className="font-bold text-slate-900">500+ licensed pharmacies</span>
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right Column: 3D FEFO Shelf Showcase */}
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="lg:col-span-6"
+          >
+            <FEFOShelfComponent />
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 /* ══════════════════════════════════════════════════════════════════════
    STATS STRIP
 ══════════════════════════════════════════════════════════════════════ */
 const StatsStrip: React.FC = () => (
-  <section style={{ background: DARK2, borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-    <div className="max-w-7xl mx-auto px-5 sm:px-8 py-12 sm:py-16">
+  <section style={{ background: TOKENS.ink }} className="py-12 sm:py-16 text-white border-y border-slate-800">
+    <div className="max-w-7xl mx-auto px-5 sm:px-8">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
-        {STATS.map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, delay: i * 0.1 }}
-            className="text-center"
-          >
+        {STATS.map((s) => (
+          <div key={s.label} className="text-center">
             <p
-              className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-1"
-              style={{ background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+              className="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono mb-1"
+              style={{ color: TOKENS.amber }}
             >
               {s.value}
             </p>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium">{s.label}</p>
-          </motion.div>
+            <p className="text-xs sm:text-sm text-slate-400 font-medium">{s.label}</p>
+          </div>
         ))}
       </div>
     </div>
@@ -578,219 +572,271 @@ const StatsStrip: React.FC = () => (
 );
 
 /* ══════════════════════════════════════════════════════════════════════
-   FEATURES — BENTO GRID
+   FEATURES SECTION
 ══════════════════════════════════════════════════════════════════════ */
-const FeatureCard: React.FC<{ feature: typeof FEATURES[0]; index: number }> = ({ feature, index }) => {
-  const Icon = feature.icon;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="group relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-      style={{
-        background: '#FFFFFF',
-        border: '1px solid rgba(0,0,0,0.06)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-      }}
-    >
-      {/* Accent top border */}
-      <div
-        className="absolute top-0 left-6 right-6 h-[2px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ background: feature.accent }}
-      />
-
-      <div className="flex items-center gap-3 mb-4">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: feature.accentBg }}
-        >
-          <Icon size={20} style={{ color: feature.accent }} />
-        </div>
-        <span className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: feature.accent }}>
-          {feature.tag}
-        </span>
-      </div>
-
-      <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2.5 leading-tight">
-        {feature.title}
-      </h3>
-      <p className="text-sm text-slate-500 leading-relaxed mb-5">
-        {feature.desc}
-      </p>
-
-      <ul className="space-y-2.5 mb-5">
-        {feature.bullets.map((b) => (
-          <li key={b} className="flex items-center gap-2.5 text-sm text-slate-700 font-medium">
-            <CheckCircle2 size={15} style={{ color: feature.accent }} className="flex-shrink-0" />
-            {b}
-          </li>
-        ))}
-      </ul>
-
-      <Link
-        to="/login"
-        className="inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all duration-200"
-        style={{ color: feature.accent }}
-      >
-        Learn more <ArrowUpRight size={14} />
-      </Link>
-    </motion.div>
-  );
-};
-
 const FeaturesSection: React.FC = () => (
-  <section id="features" className="py-20 sm:py-28" style={{ background: '#FAFBFC' }}>
+  <section id="features" className="py-20 sm:py-28" style={{ background: TOKENS.porcelain }}>
     <div className="max-w-7xl mx-auto px-5 sm:px-8">
-      {/* Section header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: 0.6 }}
-        className="max-w-2xl mx-auto mb-14 sm:mb-20"
-        style={{ textAlign: 'center' }}
-      >
-        <div
-          className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
-          style={{ background: 'rgba(16,185,129,0.08)', color: '#10B981', border: '1px solid rgba(16,185,129,0.15)' }}
+      {/* Header */}
+      <div className="max-w-2xl mx-auto text-center mb-16">
+        <span
+          className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider font-mono mb-4 border"
+          style={{ background: TOKENS.sageDim, borderColor: 'rgba(76, 99, 87, 0.2)', color: TOKENS.sage }}
         >
-          <Zap size={12} /> Purpose-Built
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-          Everything your pharmacy needs
+          Built for Licensed Pharmacists
+        </span>
+        <h2
+          className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mb-4"
+          style={{ fontFamily: "'DM Serif Display', serif" }}
+        >
+          Pharmacy operations, refined
         </h2>
-        <p className="text-slate-500 text-sm sm:text-base">
-          Four pillars of high-performance pharmacy software — designed to reduce errors and maximize efficiency.
+        <p className="text-slate-600 text-sm sm:text-base">
+          Four essential capabilities designed specifically for community, clinical, and retail pharmacies.
         </p>
-      </motion.div>
+      </div>
 
       {/* Grid */}
-      <div className="grid sm:grid-cols-2 gap-5 sm:gap-6">
-        {FEATURES.map((f, i) => (
-          <FeatureCard key={f.title} feature={f} index={i} />
-        ))}
+      <div className="grid sm:grid-cols-2 gap-6 lg:gap-8">
+        {FEATURES.map((feature) => {
+          const Icon = feature.icon;
+          return (
+            <div
+              key={feature.title}
+              className="p-7 sm:p-8 rounded-3xl transition-all duration-300 border hover:-translate-y-1 hover:shadow-xl"
+              style={{
+                background: TOKENS.white,
+                borderColor: TOKENS.mist,
+                boxShadow: '0 4px 20px rgba(28, 32, 41, 0.04)',
+              }}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                  style={{ background: feature.accentBg }}
+                >
+                  <Icon size={22} style={{ color: feature.accent }} />
+                </div>
+                <span className="text-xs font-bold font-mono uppercase tracking-wider" style={{ color: feature.accent }}>
+                  {feature.tag}
+                </span>
+              </div>
+
+              <h3 className="text-xl font-bold text-slate-900 mb-3" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                {feature.title}
+              </h3>
+              <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                {feature.desc}
+              </p>
+
+              <ul className="space-y-2.5 mb-6">
+                {feature.bullets.map((b) => (
+                  <li key={b} className="flex items-center gap-2.5 text-xs sm:text-sm font-medium text-slate-700">
+                    <CheckCircle2 size={16} style={{ color: feature.accent }} className="flex-shrink-0" />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold font-mono uppercase tracking-wider hover:gap-2 transition-all"
+                style={{ color: feature.accent }}
+              >
+                Explore Workflow <ArrowUpRight size={15} />
+              </Link>
+            </div>
+          );
+        })}
       </div>
     </div>
   </section>
 );
 
 /* ══════════════════════════════════════════════════════════════════════
-   TESTIMONIALS
+   TESTIMONIALS SECTION
 ══════════════════════════════════════════════════════════════════════ */
 const TestimonialsSection: React.FC = () => (
-  <section
-    id="testimonials"
-    className="py-20 sm:py-28 relative overflow-hidden"
-    style={{ background: DARK }}
-  >
-    {/* Ambient glow */}
-    <div
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[400px] rounded-full pointer-events-none"
-      style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)', filter: 'blur(60px)' }}
-    />
+  <section id="testimonials" className="py-20 sm:py-28 text-white relative" style={{ background: TOKENS.ink }}>
+    <div className="max-w-4xl mx-auto px-5 sm:px-8 text-center relative z-10">
+      <div className="flex items-center justify-center gap-1 mb-8">
+        {[...Array(5)].map((_, i) => (
+          <Star key={i} size={20} fill="#C1791F" style={{ color: TOKENS.amber }} />
+        ))}
+      </div>
 
-    <div className="max-w-4xl mx-auto px-5 sm:px-8 relative z-10">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: 0.7 }}
-        className="text-center"
+      <blockquote
+        className="text-2xl sm:text-3xl md:text-4xl font-normal text-slate-100 leading-relaxed mb-10"
+        style={{ fontFamily: "'DM Serif Display', serif" }}
       >
-        <div className="flex items-center justify-center gap-1 mb-6">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} size={18} fill="#FBBF24" className="text-amber-400" />
-          ))}
-        </div>
+        "PharmaSys transformed how our pharmacy group operates.{' '}
+        <span style={{ color: TOKENS.amber, fontStyle: 'italic' }}>
+          FEFO batch tracking alone saved us over $14,000 in expired medication
+        </span>{' '}
+        within our first quarter."
+      </blockquote>
 
-        <blockquote
-          className="text-xl sm:text-2xl md:text-3xl font-medium text-slate-200 leading-relaxed mb-8 italic"
+      <div className="flex items-center justify-center gap-4">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold font-mono text-white"
+          style={{ background: TOKENS.amber }}
         >
-          "PharmaSys transformed how we manage our multi-branch pharmacy group. FEFO batch tracking alone saved us over{' '}
-          <span
-            style={{
-              background: GRAD,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            $14,000 in expired inventory
-          </span>{' '}
-          within our first quarter."
-        </blockquote>
-
-        <div className="flex items-center justify-center gap-4">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-emerald-400"
-            style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}
-          >
-            SM
-          </div>
-          <div className="text-left">
-            <p className="font-bold text-white text-sm sm:text-base">Dr. Sarah M., PharmD</p>
-            <p className="text-xs sm:text-sm text-slate-500">Chief Managing Pharmacist • CityMed Pharmacy Group</p>
-          </div>
+          SM
         </div>
-      </motion.div>
+        <div className="text-left">
+          <p className="font-bold text-white text-base">Dr. Sarah M., PharmD</p>
+          <p className="text-xs text-slate-400 font-mono">Managing Pharmacist · CityMed Pharmacy Network</p>
+        </div>
+      </div>
     </div>
   </section>
 );
 
 /* ══════════════════════════════════════════════════════════════════════
-   TRUST & SECURITY
+   SECURITY & TRUST SECTION
 ══════════════════════════════════════════════════════════════════════ */
 const TrustSection: React.FC = () => (
-  <section id="trust" className="py-20 sm:py-28" style={{ background: '#FAFBFC' }}>
+  <section id="trust" className="py-20 sm:py-28" style={{ background: TOKENS.porcelain }}>
     <div className="max-w-7xl mx-auto px-5 sm:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: 0.6 }}
-        className="max-w-2xl mx-auto mb-12 sm:mb-16"
-        style={{ textAlign: 'center' }}
-      >
-        <div
-          className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
-          style={{ background: 'rgba(16,185,129,0.08)', color: '#10B981', border: '1px solid rgba(16,185,129,0.15)' }}
+      <div className="max-w-2xl mx-auto text-center mb-16">
+        <span
+          className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider font-mono mb-4 border"
+          style={{ background: TOKENS.sageDim, borderColor: 'rgba(76, 99, 87, 0.2)', color: TOKENS.sage }}
         >
-          <Lock size={12} /> Enterprise Security
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-          Built on trust
+          Regulatory & Security
+        </span>
+        <h2
+          className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mb-4"
+          style={{ fontFamily: "'DM Serif Display', serif" }}
+        >
+          Built for regulatory peace of mind
         </h2>
-        <p className="text-slate-500 text-sm sm:text-base">
-          Healthcare-grade infrastructure for pharmacies that can't afford downtime.
+        <p className="text-slate-600 text-sm sm:text-base">
+          Bank-grade encryption, immutable logs, and zero downtime architecture.
         </p>
-      </motion.div>
+      </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {TRUST_ITEMS.map((item, i) => {
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {TRUST_ITEMS.map((item) => {
           const Icon = item.icon;
           return (
-            <motion.div
+            <div
               key={item.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="bg-white p-5 sm:p-6 rounded-2xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
-              style={{ border: '1px solid rgba(0,0,0,0.06)' }}
+              className="p-6 rounded-2xl border bg-white transition-all hover:shadow-md"
+              style={{ borderColor: TOKENS.mist }}
             >
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                style={{ background: 'rgba(16,185,129,0.07)' }}
+                style={{ background: TOKENS.sageDim }}
               >
-                <Icon size={20} className="text-emerald-600" />
+                <Icon size={20} style={{ color: TOKENS.sage }} />
               </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1.5">{item.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
-            </motion.div>
+              <h4 className="text-base font-bold text-slate-900 mb-2">{item.title}</h4>
+              <p className="text-xs text-slate-600 leading-relaxed">{item.desc}</p>
+            </div>
           );
         })}
+      </div>
+    </div>
+  </section>
+);
+
+/* ══════════════════════════════════════════════════════════════════════
+   PRICING SECTION (Explicitly fixes missing Pricing link requirement)
+══════════════════════════════════════════════════════════════════════ */
+const PricingSection: React.FC = () => (
+  <section id="pricing" className="py-20 sm:py-28 bg-white border-t border-slate-200">
+    <div className="max-w-7xl mx-auto px-5 sm:px-8">
+      <div className="max-w-2xl mx-auto text-center mb-16">
+        <span
+          className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider font-mono mb-4 border"
+          style={{ background: TOKENS.amberDim, borderColor: 'rgba(193, 121, 31, 0.2)', color: TOKENS.amber }}
+        >
+          Transparent Pricing
+        </span>
+        <h2
+          className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mb-4"
+          style={{ fontFamily: "'DM Serif Display', serif" }}
+        >
+          Tailored to your pharmacy scale
+        </h2>
+        <p className="text-slate-600 text-sm sm:text-base">
+          Simple monthly plans with no hidden license fees. Cancel or upgrade anytime.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* Single Branch Plan */}
+        <div
+          className="p-8 rounded-3xl border bg-white flex flex-col justify-between"
+          style={{ borderColor: TOKENS.mist }}
+        >
+          <div>
+            <span className="text-xs font-bold font-mono uppercase tracking-wider text-slate-500">Single Location</span>
+            <h3 className="text-2xl font-bold text-slate-900 mt-2 mb-4" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Standard Branch
+            </h3>
+            <div className="flex items-baseline gap-1 mb-6">
+              <span className="text-4xl font-extrabold font-mono text-slate-900">$149</span>
+              <span className="text-sm font-mono text-slate-500">/ month / location</span>
+            </div>
+            <ul className="space-y-3 mb-8">
+              {['Full FEFO Batch Prioritization', 'POS & Barcode Scanner Integration', 'Prescription Lifecycle Tracking', '2,500 Monthly Rx Capacity'].map((feat) => (
+                <li key={feat} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-700">
+                  <Check size={16} style={{ color: TOKENS.sage }} />
+                  {feat}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Link
+            to="/login"
+            style={{ border: `1.5px solid ${TOKENS.ink}`, color: TOKENS.ink }}
+            className="w-full py-3 rounded-xl font-bold text-sm text-center block transition-all hover:bg-slate-100"
+          >
+            Book Standard Demo
+          </Link>
+        </div>
+
+        {/* Multi-Branch Group Plan */}
+        <div
+          className="p-8 rounded-3xl border relative bg-white flex flex-col justify-between shadow-xl"
+          style={{ borderColor: TOKENS.amber }}
+        >
+          <div
+            className="absolute -top-3.5 right-8 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider font-mono text-white"
+            style={{ background: TOKENS.amber }}
+          >
+            Recommended for Groups
+          </div>
+          <div>
+            <span className="text-xs font-bold font-mono uppercase tracking-wider" style={{ color: TOKENS.amber }}>
+              Multi-Branch Network
+            </span>
+            <h3 className="text-2xl font-bold text-slate-900 mt-2 mb-4" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Enterprise Group
+            </h3>
+            <div className="flex items-baseline gap-1 mb-6">
+              <span className="text-4xl font-extrabold font-mono text-slate-900">$299</span>
+              <span className="text-sm font-mono text-slate-500">/ month / network</span>
+            </div>
+            <ul className="space-y-3 mb-8">
+              {['Unlimited Branch Synchronization', 'Centralized Purchasing & Supplier Orders', 'Custom Controlled Substance Auditing', 'Unlimited Rx Capacity & Dedicated Account Manager'].map((feat) => (
+                <li key={feat} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-700">
+                  <Check size={16} style={{ color: TOKENS.amber }} />
+                  {feat}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Link
+            to="/login"
+            style={{ background: TOKENS.amber, color: TOKENS.white }}
+            className="w-full py-3 rounded-xl font-bold text-sm text-center block transition-all hover:scale-102 shadow-md"
+          >
+            Book Enterprise Demo
+          </Link>
+        </div>
       </div>
     </div>
   </section>
@@ -800,49 +846,37 @@ const TrustSection: React.FC = () => (
    CTA BANNER
 ══════════════════════════════════════════════════════════════════════ */
 const CTABanner: React.FC = () => (
-  <section className="py-20 sm:py-28" style={{ background: DARK }}>
+  <section className="py-20 sm:py-28" style={{ background: TOKENS.porcelain }}>
     <div className="max-w-5xl mx-auto px-5 sm:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: 0.7 }}
-        className="relative rounded-3xl sm:rounded-[2rem] overflow-hidden p-8 sm:p-14 text-center"
-        style={{
-          background: GRAD,
-          boxShadow: '0 24px 80px rgba(16,185,129,0.25)',
-        }}
+      <div
+        className="rounded-3xl p-8 sm:p-14 text-center text-white relative overflow-hidden"
+        style={{ background: TOKENS.amber, boxShadow: '0 20px 60px rgba(193, 121, 31, 0.35)' }}
       >
-        {/* Decorative inner glow */}
-        <div
-          className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%)', filter: 'blur(40px)' }}
-        />
-
-        <div className="relative z-10">
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight mb-4">
-            Ready to modernize your pharmacy?
-          </h2>
-          <p className="text-emerald-100/80 text-sm sm:text-lg mb-8 max-w-lg mx-auto">
-            Get started in 5 minutes with full demo access. No credit card required.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3.5">
-            <Link
-              to="/login"
-              className="px-7 py-3.5 rounded-full font-bold text-emerald-700 bg-white hover:bg-emerald-50 hover:scale-105 transition-all duration-200 shadow-lg text-sm"
-            >
-              Start Free Trial Now
-            </Link>
-            <Link
-              to="/login"
-              className="px-7 py-3.5 rounded-full font-semibold text-white hover:bg-white/10 hover:scale-105 transition-all duration-200 text-sm"
-              style={{ border: '2px solid rgba(255,255,255,0.35)' }}
-            >
-              Sign In to Demo
-            </Link>
-          </div>
+        <h2
+          className="text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight"
+          style={{ fontFamily: "'DM Serif Display', serif" }}
+        >
+          Ready to eliminate expired inventory?
+        </h2>
+        <p className="text-amber-100 text-sm sm:text-base mb-8 max-w-xl mx-auto font-medium">
+          Schedule a live walkthrough with our pharmacy solutions team. Setup takes under 5 minutes.
+        </p>
+        <div className="flex flex-wrap justify-center gap-4">
+          <Link
+            to="/login"
+            style={{ background: TOKENS.ink, color: TOKENS.white }}
+            className="px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base transition-all hover:scale-105 shadow-lg"
+          >
+            Book a Demo Now
+          </Link>
+          <Link
+            to="/login"
+            className="px-8 py-3.5 rounded-xl font-semibold text-sm sm:text-base border border-white/40 text-white hover:bg-white/10 transition-all"
+          >
+            Sign In to Demo
+          </Link>
         </div>
-      </motion.div>
+      </div>
     </div>
   </section>
 );
@@ -851,37 +885,30 @@ const CTABanner: React.FC = () => (
    FOOTER
 ══════════════════════════════════════════════════════════════════════ */
 const Footer: React.FC = () => (
-  <footer style={{ background: DARK, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-    <div className="max-w-7xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+  <footer style={{ background: TOKENS.ink }} className="text-slate-400 py-12 border-t border-slate-800">
+    <div className="max-w-7xl mx-auto px-5 sm:px-8">
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5">
-          <div
-            style={{ background: GRAD }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center"
-          >
-            <Link2 size={14} color="#fff" strokeWidth={2.5} />
+        <Link to="/" className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: TOKENS.amber }}>
+            <Link2 size={16} color="#FFF" />
           </div>
-          <span className="font-extrabold text-base tracking-tight text-white">
-            Pharma<span style={{ color: '#10B981' }}>Sys</span>
+          <span className="font-bold text-white text-lg" style={{ fontFamily: "'DM Serif Display', serif" }}>
+            Pharma<span style={{ color: TOKENS.amber }}>Sys</span>
           </span>
         </Link>
 
-        {/* Links */}
-        <div className="flex flex-wrap justify-center gap-6 text-sm font-medium text-slate-500">
+        <div className="flex flex-wrap justify-center gap-6 text-sm font-medium">
           {NAV_LINKS.map((l) => (
-            <a key={l.name} href={l.href} className="hover:text-emerald-400 transition-colors">
+            <a key={l.name} href={l.href} className="hover:text-white transition-colors">
               {l.name}
             </a>
           ))}
-          <Link to="/login" className="hover:text-emerald-400 transition-colors">
+          <Link to="/login" className="hover:text-white transition-colors">
             Sign In
           </Link>
         </div>
 
-        {/* Copyright */}
-        <p className="text-xs text-slate-600">
+        <p className="text-xs font-mono text-slate-500">
           © {new Date().getFullYear()} PharmaSys Inc. All rights reserved.
         </p>
       </div>
@@ -903,7 +930,7 @@ export const Landing: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen font-sans text-slate-900 relative" style={{ background: DARK }}>
+    <div className="min-h-screen font-sans text-slate-900 relative" style={{ background: TOKENS.porcelain }}>
       <style>{KEYFRAMES}</style>
       <Navbar scrolled={scrolled} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
       <HeroSection />
@@ -911,8 +938,11 @@ export const Landing: React.FC = () => {
       <FeaturesSection />
       <TestimonialsSection />
       <TrustSection />
+      <PricingSection />
       <CTABanner />
       <Footer />
     </div>
   );
 };
+
+export default Landing;

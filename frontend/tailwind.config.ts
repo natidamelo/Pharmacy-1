@@ -5,6 +5,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        apothecary: {
+          ink: '#1C2029',
+          porcelain: '#EEF0EC',
+          amber: '#C1791F',
+          sage: '#4C6357',
+          brick: '#A23B2E',
+          mist: '#D7DBD3',
+        },
         primary: {
           DEFAULT: '#0F6E5C',
           light: '#148A73',
@@ -22,31 +30,31 @@ const config: Config = {
           500: '#C17A1F',
         },
         danger: {
-          DEFAULT: '#C0392B',
-          light: '#E04030',
+          DEFAULT: '#A23B2E',
+          light: '#C0392B',
           50: '#FDECEA',
           100: '#F5C2BE',
-          500: '#C0392B',
+          500: '#A23B2E',
         },
         ink: {
-          DEFAULT: '#15191C',
-          muted: '#4A5568',
+          DEFAULT: '#1C2029',
+          muted: '#4C6357',
           subtle: '#718096',
         },
         surface: {
-          DEFAULT: '#F5F7F6',
+          DEFAULT: '#EEF0EC',
           card: '#FFFFFF',
-          hover: '#EEF2F0',
+          hover: '#E4E7E1',
         },
         border: {
-          DEFAULT: '#DDE4E2',
-          strong: '#C5CEC9',
+          DEFAULT: '#D7DBD3',
+          strong: '#BCC2B6',
         },
       },
       fontFamily: {
-        display: ['Space Grotesk', 'sans-serif'],
+        display: ['"DM Serif Display"', 'serif'],
         body: ['Inter', 'sans-serif'],
-        mono: ['Space Mono', 'monospace'],
+        mono: ['"IBM Plex Mono"', '"Space Mono"', 'monospace'],
       },
       fontSize: {
         '2xs': '0.625rem',

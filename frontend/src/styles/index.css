@@ -6,67 +6,42 @@
    These generate utility classes like bg-primary, text-ink, etc.
    ───────────────────────────────────────────── */
 @theme {
-  /* ── Light app theme (Dashboard, POS, etc.) ────────────────────── */
-  --color-bg:              #F5F7F6;
-  --color-ink:             #15191C;
-  --color-ink-muted:       #4A5568;
-  --color-ink-subtle:      #718096;
-  --color-primary:         #0F6E5C;
-  --color-primary-mid:     #0d9488;
-  --color-primary-light:   #34d399;
-  --color-primary-dark:    #0a5245;
-  --color-warning:         #C17A1F;
-  --color-danger:          #C0392B;
-  --color-danger-light:    #a93226;
-  --color-border:          #DDE4E2;
+  /* ── Apothecary System Tokens ────────────────────── */
+  --color-ink:             #1C2029;
+  --color-porcelain:       #EEF0EC;
+  --color-amber-glass:     #C1791F;
+  --color-apothecary-sage: #4C6357;
+  --color-alert-brick:     #A23B2E;
+  --color-mist:            #D7DBD3;
+
+  /* ── Legacy app fallback compatibility ────────────────────── */
+  --color-bg:              #EEF0EC;
+  --color-primary:         #C1791F;
+  --color-primary-mid:     #A86718;
+  --color-primary-light:   #E5A14A;
+  --color-primary-dark:    #824F10;
+  --color-warning:         #C1791F;
+  --color-danger:          #A23B2E;
+  --color-border:          #D7DBD3;
   --color-surface:         #FFFFFF;
-  --color-surface-hover:   #F8FAF9;
-
-  /* ── Dark login theme ──────────────────────────────────────────── */
-  /* Page backgrounds */
-  --color-dark-bg:         #162B52;
-  --color-dark-bg-mid:     #1B3560;
-
-  /* Raised surfaces (cards, panels) */
-  --color-dark-surface:    #233F70;
-  --color-dark-surface-2:  #2A4B80;
-
-  /* Secondary accent — indigo / violet */
-  --color-indigo:          #6366F1;
-  --color-indigo-light:    #818CF8;
-  --color-indigo-dim:      rgba(99, 102, 241, 0.15);
-  --color-indigo-glow:     rgba(99, 102, 241, 0.22);
-
-  /* Semantic alert accent — amber */
-  --color-amber:           #F59E0B;
-  --color-amber-dim:       rgba(245, 158, 11, 0.15);
-  --color-amber-border:    rgba(245, 158, 11, 0.35);
-
-  /* Dark text scale */
-  --color-dark-heading:    #F8FAFC;
-  --color-dark-body:       #94A3B8;
-  --color-dark-muted:      #64748B;
-
-  /* Dark inputs */
-  --color-dark-input-bg:   #101F3E;
-  --color-dark-input-bdr:  rgba(255, 255, 255, 0.14);
+  --color-surface-hover:   #E4E7E1;
 
   /* Fonts */
-  --font-display: 'Space Grotesk', sans-serif;
+  --font-display: 'DM Serif Display', serif;
   --font-body:    'Inter', sans-serif;
-  --font-mono:    'Space Mono', monospace;
+  --font-mono:    'IBM Plex Mono', 'Space Mono', monospace;
 }
 
 /* ─────────────────────────────────────────────
-   Base Reset
+   Base Reset & Focus States
    ───────────────────────────────────────────── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
 
   body {
-    background-color: #F5F7F6;
-    color: #15191C;
+    background-color: #EEF0EC;
+    color: #1C2029;
     font-family: 'Inter', sans-serif;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -74,9 +49,9 @@
   }
 
   :focus-visible {
-    outline: 2px solid #0F6E5C;
+    outline: 2px solid #C1791F;
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 
   /* Ensure full-height layout */
