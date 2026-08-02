@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import {
   Package, BarChart3, Bell, FileText, Shield,
   Link2, ArrowRight, Star, CheckCircle2,
   Menu, X, AlertCircle, Zap, Headphones,
-  Clock, ArrowUpRight, Sparkles, Check
+  Clock, ArrowUpRight, Sparkles, Check, RotateCcw, Play
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -48,6 +48,14 @@ const STATS = [
   { value: '2M+', label: 'Prescriptions Dispensed' },
   { value: '99.99%', label: 'FEFO Compliance Rate' },
   { value: '0.00%', label: 'Expired Stock Waste' },
+];
+
+const INITIAL_INVENTORY = [
+  { lot: 'LOT-9824', name: 'Amoxicillin 500mg', exp: '10/2026', days: 45, status: 'DISPENSE NEXT', count: '120 caps', priority: 1, category: 'Antibiotic' },
+  { lot: 'LOT-9871', name: 'Metformin 850mg', exp: '04/2027', days: 240, status: 'Queue #2', count: '500 tabs', priority: 2, category: 'Antidiabetic' },
+  { lot: 'LOT-9902', name: 'Atorvastatin 20mg', exp: '11/2027', days: 450, status: 'Queue #3', count: '250 tabs', priority: 3, category: 'Statin' },
+  { lot: 'LOT-9945', name: 'Lisinopril 10mg', exp: '03/2028', days: 580, status: 'Queue #4', count: '1000 tabs', priority: 4, category: 'ACE Inhibitor' },
+  { lot: 'LOT-9988', name: 'Omeprazole 20mg', exp: '08/2028', days: 740, status: 'Queue #5', count: '300 caps', priority: 5, category: 'PPI' },
 ];
 
 const FEATURES = [
@@ -217,22 +225,36 @@ const Navbar: React.FC<NavbarProps> = ({ scrolled, menuOpen, setMenuOpen }) => (
 );
 
 /* ══════════════════════════════════════════════════════════════════════
-   SIGNATURE ELEMENT: 3D FEFO SHELF COMPONENT
-   Spacious, un-squished, clear visual priority
+   UPGRADED HERO CENTERPIECE: INTERACTIVE FEFO QUEUE & DISPENSE SIMULATOR
 ══════════════════════════════════════════════════════════════════════ */
 const FEFOShelfComponent: React.FC = () => {
-  const [, setActiveItemIndex] = useState(0);
+  const [items, setItems] = useState(INITIAL_INVENTORY);
+  const [dispensedCount, setDispensedCount] = useState(0);
+  const [lastDispensed, setLastDispensed] = useState<string | null>(null);
 
-  const inventoryItems = [
-    { lot: 'LOT-9824', name: 'Amoxicillin 500mg', exp: '10/2026', days: 45, status: 'DISPENSE NEXT', count: '120 caps', priority: 1 },
-    { lot: 'LOT-9871', name: 'Metformin 850mg', exp: '04/2027', days: 240, status: 'Queue #2', count: '500 tabs', priority: 2 },
-    { lot: 'LOT-9902', name: 'Atorvastatin 20mg', exp: '11/2027', days: 450, status: 'Queue #3', count: '250 tabs', priority: 3 },
-    { lot: 'LOT-9945', name: 'Lisinopril 10mg', exp: '03/2028', days: 580, status: 'Queue #4', count: '1000 tabs', priority: 4 },
-  ];
+  const handleSimulateDispense = () => {
+    if (items.length <= 1) return;
+    const dispatched = items[0];
+    setLastDispensed(dispatched.name);
+    setDispensedCount((prev) => prev + 1);
+
+    const remaining = items.slice(1).map((item, idx) => ({
+      ...item,
+      priority: idx + 1,
+      status: idx === 0 ? 'DISPENSE NEXT' : `Queue #${idx + 1}`,
+    }));
+
+    setItems(remaining);
+  };
+
+  const handleReset = () => {
+    setItems(INITIAL_INVENTORY);
+    setLastDispensed(null);
+  };
 
   return (
     <div className="relative w-full">
-      {/* Main Container Card */}
+      {/* Main Showcase Container */}
       <div
         className="relative rounded-3xl p-6 sm:p-8 transition-all"
         style={{
@@ -241,29 +263,36 @@ const FEFOShelfComponent: React.FC = () => {
           boxShadow: '0 24px 60px rgba(28, 32, 41, 0.08), 0 4px 16px rgba(28, 32, 41, 0.03)',
         }}
       >
-        {/* Top Header */}
+        {/* Header Bar with Interactive Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-5 mb-6 border-b border-slate-200">
           <div className="flex items-center gap-2.5">
-            <div className="w-3.5 h-3.5 rounded-full" style={{ background: TOKENS.amber }} />
+            <div className="w-3.5 h-3.5 rounded-full animate-pulse" style={{ background: TOKENS.amber }} />
             <span className="text-xs sm:text-sm font-bold tracking-wider uppercase font-mono text-slate-800">
-              FEFO Shelf Queue · Real-time Priority
+              Interactive FEFO Queue Simulator
             </span>
           </div>
 
-          <div
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold font-mono"
-            style={{
-              background: TOKENS.sageDim,
-              borderColor: 'rgba(76, 99, 87, 0.25)',
-              color: TOKENS.sage,
-            }}
-          >
-            <span className="w-2 h-2 rounded-full" style={{ background: TOKENS.sage }} />
-            Live Stock Sync
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSimulateDispense}
+              disabled={items.length <= 1}
+              style={{ background: TOKENS.amber, color: TOKENS.white }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold font-mono transition-all hover:scale-105 disabled:opacity-50 shadow-sm"
+            >
+              <Play size={13} /> Simulate POS Dispense
+            </button>
+            <button
+              onClick={handleReset}
+              style={{ background: TOKENS.mistLight, color: TOKENS.ink }}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold font-mono transition-colors hover:bg-slate-200"
+              title="Reset Queue"
+            >
+              <RotateCcw size={13} />
+            </button>
           </div>
         </div>
 
-        {/* Showcase Image Frame */}
+        {/* Hero Image Showcase */}
         <div className="relative rounded-2xl overflow-hidden mb-6 bg-slate-900 shadow-md">
           <img
             src="/fefo_shelf_hero.jpg"
@@ -271,83 +300,102 @@ const FEFOShelfComponent: React.FC = () => {
             className="w-full h-60 sm:h-72 object-cover object-center"
           />
 
-          {/* Clean Top Tag */}
-          <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+          {/* Dynamic Top Badge */}
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between flex-wrap gap-2">
             <span
               className="px-3.5 py-1.5 rounded-lg text-xs font-extrabold tracking-wider uppercase font-mono shadow-md"
               style={{ background: TOKENS.amber, color: TOKENS.white }}
             >
               #1 Expiry Pulled Forward
             </span>
-            <span
-              className="px-3 py-1.5 rounded-lg text-xs font-bold font-mono bg-black/60 text-white backdrop-blur-md"
-            >
-              Automatic POS Dispatch
+            <span className="px-3 py-1.5 rounded-lg text-xs font-bold font-mono bg-black/70 text-white backdrop-blur-md">
+              Dispensed: {dispensedCount} batches
             </span>
           </div>
+
+          {/* Last Dispensed Toast Banner */}
+          <AnimatePresence>
+            {lastDispensed && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="absolute bottom-4 left-4 right-4 bg-emerald-900/90 text-emerald-100 backdrop-blur-md px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center justify-between shadow-lg border border-emerald-500/30"
+              >
+                <span>✓ Successfully Dispatched: <strong className="text-white">{lastDispensed}</strong></span>
+                <span className="text-[10px] text-emerald-300">FEFO Verified</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* FEFO Queue Panel — Generous spacing */}
+        {/* Live FEFO Stock Queue Items */}
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs sm:text-sm font-bold tracking-wider uppercase font-mono text-slate-700">
-              Active Stock Queue (Expiring First)
+              Live Stock Queue ({items.length} Batches Active)
             </h4>
-            <span className="text-xs font-mono text-slate-400">Sorted by FEFO</span>
+            <span className="text-xs font-mono text-amber-700 font-semibold">Soonest Expiry First</span>
           </div>
 
           <div className="space-y-2.5">
-            {inventoryItems.map((item, idx) => {
-              const isFirst = idx === 0;
-              return (
-                <div
-                  key={item.lot}
-                  onClick={() => setActiveItemIndex(idx)}
-                  className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl cursor-pointer transition-all border"
-                  style={{
-                    background: isFirst ? 'rgba(193, 121, 31, 0.06)' : TOKENS.white,
-                    borderColor: isFirst ? TOKENS.amber : TOKENS.mist,
-                    boxShadow: isFirst ? '0 4px 16px rgba(193, 121, 31, 0.12)' : 'none',
-                  }}
-                >
-                  <div className="flex items-center gap-3.5 min-w-[200px]">
-                    <span
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-mono font-bold flex-shrink-0"
-                      style={{
-                        background: isFirst ? TOKENS.amber : TOKENS.mist,
-                        color: isFirst ? TOKENS.white : TOKENS.ink,
-                      }}
-                    >
-                      {idx + 1}
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm sm:text-base font-bold text-slate-900">{item.name}</p>
-                        <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                          {item.lot}
-                        </span>
+            <AnimatePresence mode="popLayout">
+              {items.map((item, idx) => {
+                const isFirst = idx === 0;
+                return (
+                  <motion.div
+                    key={item.lot}
+                    layout
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl transition-all border"
+                    style={{
+                      background: isFirst ? 'rgba(193, 121, 31, 0.06)' : TOKENS.white,
+                      borderColor: isFirst ? TOKENS.amber : TOKENS.mist,
+                      boxShadow: isFirst ? '0 4px 16px rgba(193, 121, 31, 0.12)' : 'none',
+                    }}
+                  >
+                    <div className="flex items-center gap-3.5 min-w-[200px]">
+                      <span
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-mono font-bold flex-shrink-0"
+                        style={{
+                          background: isFirst ? TOKENS.amber : TOKENS.mist,
+                          color: isFirst ? TOKENS.white : TOKENS.ink,
+                        }}
+                      >
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm sm:text-base font-bold text-slate-900">{item.name}</p>
+                          <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                            {item.lot}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-mono mt-0.5">
+                          Exp: <span className="font-bold text-slate-800">{item.exp}</span> ({item.days} days remaining)
+                        </p>
                       </div>
-                      <p className="text-xs text-slate-500 font-mono mt-0.5">
-                        Exp: <span className="font-bold text-slate-800">{item.exp}</span> ({item.days} days remaining)
-                      </p>
                     </div>
-                  </div>
 
-                  <div className="text-right flex-shrink-0">
-                    <span
-                      className="inline-block px-3 py-1 rounded-md text-xs font-bold font-mono uppercase"
-                      style={{
-                        background: isFirst ? TOKENS.amber : TOKENS.sageDim,
-                        color: isFirst ? TOKENS.white : TOKENS.sage,
-                      }}
-                    >
-                      {item.status}
-                    </span>
-                    <p className="text-xs font-mono text-slate-400 mt-1">{item.count}</p>
-                  </div>
-                </div>
-              );
-            })}
+                    <div className="text-right flex-shrink-0">
+                      <span
+                        className="inline-block px-3 py-1 rounded-md text-xs font-bold font-mono uppercase"
+                        style={{
+                          background: isFirst ? TOKENS.amber : TOKENS.sageDim,
+                          color: isFirst ? TOKENS.white : TOKENS.sage,
+                        }}
+                      >
+                        {item.status}
+                      </span>
+                      <p className="text-xs font-mono text-slate-400 mt-1">{item.count}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -368,7 +416,7 @@ const FEFOShelfComponent: React.FC = () => {
             <AlertCircle size={20} style={{ color: TOKENS.brick }} />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-900">Low Stock Alert</p>
+            <p className="text-sm font-bold text-slate-900">Low Stock Trigger</p>
             <p className="text-xs font-mono text-slate-500">Amoxicillin 500mg (12 units left)</p>
           </div>
         </div>
@@ -444,7 +492,7 @@ const HeroSection: React.FC = () => {
               </span>
             </div>
 
-            {/* Display Headline — Balanced Size */}
+            {/* Display Headline */}
             <h1
               className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.15]"
               style={{ fontFamily: "'DM Serif Display', serif" }}
@@ -512,7 +560,7 @@ const HeroSection: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* Right Column: Spacious 3D FEFO Shelf Showcase */}
+          {/* Right Column: Interactive FEFO Shelf Showcase */}
           <motion.div
             initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
