@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
 import { AppLayout } from './components/layout/AppLayout';
 import { Dashboard } from './pages/Dashboard';
@@ -21,7 +20,7 @@ const App: React.FC = () => {
       <Toaster position="top-right" toastOptions={{ className: 'font-body text-sm', style: { background: '#15191C', color: '#fff' } }} />
       <Routes>
         {/* ── Public routes ── */}
-        <Route path="/"      element={<Landing />} />
+        <Route path="/"      element={<Login />} />
         <Route path="/login" element={<Login />} />
 
         {/* ── Protected app routes — pathless AppLayout wrapper ── */}
