@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Pill, Eye, EyeOff, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
+import { Pill, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import { authApi } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -69,8 +69,8 @@ export const Login: React.FC = () => {
         style={{ background: 'radial-gradient(ellipse, rgba(204,251,241,0.25) 0%, transparent 70%)', filter: 'blur(40px)' }}
       />
 
-      {/* ── Header: Brand logo + Link back to home ── */}
-      <div className="max-w-md w-full mx-auto flex items-center justify-between relative z-10 pt-2 pb-6">
+      {/* ── Header: Brand logo ── */}
+      <div className="max-w-md w-full mx-auto flex items-center justify-center relative z-10 pt-2 pb-6">
         <Link to="/" className="flex items-center gap-2.5">
           <div
             style={{ background: 'linear-gradient(135deg, #059669 0%, #14b8a6 100%)' }}
@@ -82,13 +82,6 @@ export const Login: React.FC = () => {
             <span className="text-slate-900">Pharma</span>
             <span className="text-emerald-600">Sys</span>
           </span>
-        </Link>
-
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-emerald-600 transition-colors"
-        >
-          <ArrowLeft size={14} /> Back to home
         </Link>
       </div>
 
