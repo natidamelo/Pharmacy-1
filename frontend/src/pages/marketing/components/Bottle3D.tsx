@@ -1,16 +1,15 @@
 /**
- * Bottle3D — lazy-loaded react-three-fiber amber medicine bottle.
- * Code-split via React.lazy() — never enters the authenticated app bundle.
+ * Bottle3D (3D Pill Scene) — Hero 3D WebGL scene showcasing the Anti-Gravity Capsule Pill.
  *
  * Features:
- *   • Anti-gravity capsule levitation via <Float> with async offsets
- *   • Spring-physics mouse inertia (low stiffness, high damping)
- *   • Scroll-driven CatmullRom curved drift path
- *   • <Sparkles> ambient micro-particle field
- *   • Dynamic rim lights that shift with mouse position
- *   • prefers-reduced-motion: animations halted, static pose shown
+ *   • Amber bottle completely removed — 3D Capsule Pill takes center stage.
+ *   • Translucent Emerald Green top shell (MeshTransmissionMaterial) + Solid White bottom shell.
+ *   • Internal glowing wireframe core & orbiting data particles.
+ *   • Scroll-driven dynamic 3D transformation (rotation, scale, CatmullRom spline drift on scroll).
+ *   • Mouse inertia parallax tracking.
+ *   • Ambient micro-capsules levitating in anti-gravity field.
  */
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import {
   Environment,
@@ -20,9 +19,6 @@ import {
 } from '@react-three/drei';
 import * as THREE from 'three';
 
-/* ─────────────────────────────────────────────────────────── */
-/*  Types                                                       */
-/* ─────────────────────────────────────────────────────────── */
 interface Bottle3DProps {
   mouseX: number;   // -1 .. 1
   mouseY: number;   // -1 .. 1
@@ -31,205 +27,257 @@ interface Bottle3DProps {
 }
 
 /* ─────────────────────────────────────────────────────────── */
-/*  Scroll drift curve                                          */
-/*  The bottle group follows this path as the user scrolls.    */
+/*  Scroll drift curve for the Main 3D Pill                     */
 /* ─────────────────────────────────────────────────────────── */
-const SCROLL_CURVE = new THREE.CatmullRomCurve3([
-  new THREE.Vector3( 0,    0,     0),
-  new THREE.Vector3( 0.3,  -0.6,  0.15),
-  new THREE.Vector3(-0.15, -1.2,  0.05),
-  new THREE.Vector3( 0.1,  -1.8, -0.1),
+const PILL_SCROLL_CURVE = new THREE.CatmullRomCurve3([
+  new THREE.Vector3( 0,      0,      0),
+  new THREE.Vector3(-0.25,  -0.5,    0.2),
+  new THREE.Vector3( 0.2,   -1.1,    0.1),
+  new THREE.Vector3(-0.15,  -1.7,   -0.1),
 ], false, 'catmullrom', 0.5);
 
 /* ─────────────────────────────────────────────────────────── */
-/*  Spring helper — stores velocity + current value            */
+/*  Spring helper for mouse tracking                           */
 /* ─────────────────────────────────────────────────────────── */
-function useSpring(stiffness = 0.04, damping = 0.82) {
+function useSpring(stiffness = 0.045, damping = 0.84) {
   const state = useRef({ cur: 0, vel: 0, target: 0 });
   function setTarget(t: number) { state.current.target = t; }
   function step(delta: number) {
     const s = state.current;
     const force = (s.target - s.cur) * stiffness;
     s.vel = (s.vel + force) * damping;
-    s.cur += s.vel * Math.min(delta * 60, 3); // clamp big deltas
+    s.cur += s.vel * Math.min(delta * 60, 3);
     return s.cur;
   }
   return { state, setTarget, step };
 }
 
 /* ─────────────────────────────────────────────────────────── */
-/*  Amber glass material props                                  */
+/*  Floating Micro-Capsule definitions                         */
 /* ─────────────────────────────────────────────────────────── */
-const GLASS = {
-  transmission:       0.88,
-  thickness:          0.65,
-  roughness:          0.06,
-  chromaticAberration: 0.05,
-  distortionScale:    0.08,
-  temporalDistortion: 0.04,
-  color:              '#C47A1E',
-  ior:                1.49,
-  backside:           false,
-} as const;
-
-/* ─────────────────────────────────────────────────────────── */
-/*  Capsule pill definitions                                    */
-/* ─────────────────────────────────────────────────────────── */
-interface CapsuleDef {
-  pos:       [number, number, number];
-  rot:       [number, number, number];
-  color:     string;
-  capColor:  string;
-  floatSpeed:   number;
+interface MicroCapsuleDef {
+  pos: [number, number, number];
+  rot: [number, number, number];
+  color: string;
+  capColor: string;
+  floatSpeed: number;
   floatIntensity: number;
   rotationIntensity: number;
   floatRange: [number, number];
 }
 
-const CAPSULES: CapsuleDef[] = [
+const MICRO_CAPSULES: MicroCapsuleDef[] = [
   {
-    pos:               [ 1.05,  0.85,  0.3],
-    rot:               [ 0.3,   0.2,   0.5],
-    color:             '#9C6B2E',
-    capColor:          '#C47A1E',
-    floatSpeed:        1.4,
-    floatIntensity:    0.55,
-    rotationIntensity: 0.45,
-    floatRange:        [-0.18, 0.18],
-  },
-  {
-    pos:               [-0.95,  0.25,  0.4],
-    rot:               [ 0.1,   0.4,  -0.8],
-    color:             '#1B4B43',
-    capColor:          '#246059',
-    floatSpeed:        1.0,
-    floatIntensity:    0.7,
-    rotationIntensity: 0.6,
-    floatRange:        [-0.22, 0.22],
-  },
-  {
-    pos:               [ 0.8,  -0.75,  0.2],
-    rot:               [ 0.6,   0.1,   1.2],
-    color:             '#7A4A1C',
-    capColor:          '#9C6B2E',
-    floatSpeed:        1.6,
-    floatIntensity:    0.5,
-    rotationIntensity: 0.35,
-    floatRange:        [-0.15, 0.15],
-  },
-  {
-    pos:               [-0.6,  -0.9,   0.5],
-    rot:               [-0.4,   0.5,  -0.3],
-    color:             '#1B4B43',
-    capColor:          '#4C9E8C',
-    floatSpeed:        1.2,
-    floatIntensity:    0.65,
+    pos: [1.6, 1.1, 0.2],
+    rot: [0.4, 0.2, 0.6],
+    color: '#1B4B43',
+    capColor: '#0D5C3F',
+    floatSpeed: 1.5,
+    floatIntensity: 0.6,
     rotationIntensity: 0.5,
-    floatRange:        [-0.2, 0.2],
+    floatRange: [-0.2, 0.2],
   },
   {
-    pos:               [ 1.2,  -0.2,   0.1],
-    rot:               [ 0.9,  -0.3,   0.7],
-    color:             '#C47A1E',
-    capColor:          '#8B5E14',
-    floatSpeed:        0.9,
-    floatIntensity:    0.6,
+    pos: [-1.4, -0.6, 0.4],
+    rot: [0.2, 0.5, -0.7],
+    color: '#0D5C3F',
+    capColor: '#ffffff',
+    floatSpeed: 1.2,
+    floatIntensity: 0.7,
+    rotationIntensity: 0.6,
+    floatRange: [-0.25, 0.25],
+  },
+  {
+    pos: [1.3, -1.1, 0.3],
+    rot: [0.7, 0.1, 1.1],
+    color: '#C1791F',
+    capColor: '#1B4B43',
+    floatSpeed: 1.8,
+    floatIntensity: 0.5,
     rotationIntensity: 0.4,
-    floatRange:        [-0.25, 0.25],
+    floatRange: [-0.15, 0.15],
+  },
+  {
+    pos: [-1.2, 1.2, -0.2],
+    rot: [-0.3, 0.6, -0.4],
+    color: '#1B4B43',
+    capColor: '#ffffff',
+    floatSpeed: 1.1,
+    floatIntensity: 0.65,
+    rotationIntensity: 0.55,
+    floatRange: [-0.22, 0.22],
   },
 ];
 
 /* ─────────────────────────────────────────────────────────── */
-/*  Internal Core X-Ray Reveal Pill                             */
+/*  Main Hero Anti-Gravity Capsule Pill Component               */
 /* ─────────────────────────────────────────────────────────── */
-const HeroCorePill: React.FC<{ reduced: boolean }> = ({ reduced }) => {
+const MainHeroPill: React.FC<{
+  mouseX: number;
+  mouseY: number;
+  scrollY: number;
+  reduced: boolean;
+}> = ({ mouseX, mouseY, scrollY, reduced }) => {
+  const pillGroupRef = useRef<THREE.Group>(null);
+  const shellGroupRef = useRef<THREE.Group>(null);
   const coreRef = useRef<THREE.Group>(null);
 
-  useFrame((_, delta) => {
+  /* Mouse tilt springs */
+  const springRX = useSpring(0.04, 0.82);
+  const springRY = useSpring(0.04, 0.82);
+
+  const MAX_SCROLL = 2200;
+
+  useFrame((state, delta) => {
+    if (!pillGroupRef.current || !shellGroupRef.current) return;
+
+    /* ── 1. Mouse Tilt Inertia */
+    springRX.setTarget(-mouseY * 0.45);
+    springRY.setTarget(mouseX * 0.55);
+    const rx = springRX.step(delta);
+    const ry = springRY.step(delta);
+
+    /* ── 2. Scroll Transformation */
+    const progress = Math.min(scrollY / MAX_SCROLL, 1);
+    const curvePos = PILL_SCROLL_CURVE.getPoint(progress);
+
+    // Position drift along CatmullRom spline + scroll offset
+    pillGroupRef.current.position.x = curvePos.x;
+    pillGroupRef.current.position.y = curvePos.y + (reduced ? 0 : Math.sin(state.clock.elapsedTime * 0.8) * 0.08);
+    pillGroupRef.current.position.z = curvePos.z;
+
+    // Dynamic rotation on scroll down — rotates smoothly from diagonal pose to horizontal stream
+    const scrollRotX = progress * Math.PI * 0.85;
+    const scrollRotY = progress * Math.PI * 1.2;
+    const scrollRotZ = progress * Math.PI * 0.4;
+
+    shellGroupRef.current.rotation.x = THREE.MathUtils.damp(
+      shellGroupRef.current.rotation.x,
+      Math.PI / 3.2 + rx * 0.5 + scrollRotX,
+      4,
+      delta
+    );
+    shellGroupRef.current.rotation.y = THREE.MathUtils.damp(
+      shellGroupRef.current.rotation.y,
+      -Math.PI / 4 + ry * 0.6 + scrollRotY,
+      4,
+      delta
+    );
+    shellGroupRef.current.rotation.z = THREE.MathUtils.damp(
+      shellGroupRef.current.rotation.z,
+      -Math.PI / 6 + scrollRotZ,
+      4,
+      delta
+    );
+
+    // Dynamic scale morph on scroll (slightly expands & tilts forward)
+    const scaleFactor = 1 + progress * 0.22;
+    pillGroupRef.current.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+    // Internal core rotation
     if (!reduced && coreRef.current) {
-      coreRef.current.rotation.z += delta * 0.5;
-      coreRef.current.rotation.y += delta * 0.3;
+      coreRef.current.rotation.z += delta * 0.6;
+      coreRef.current.rotation.y += delta * 0.4;
     }
   });
 
   return (
-    <Float speed={2} rotationIntensity={0.55} floatIntensity={0.8} position={[-0.85, 0.45, 0.6]} rotation={[0.4, 0.3, -0.5]}>
-      <group scale={[0.42, 0.42, 0.42]}>
-        {/* Top Green/Teal Transmission Shell Half */}
-        <mesh position={[0, 0.75, 0]}>
-          <capsuleGeometry args={[0.7, 1, 32, 32]} />
-          <MeshTransmissionMaterial
-            backside
-            samples={16}
-            resolution={512}
-            transmission={0.92}
-            roughness={0.12}
-            thickness={0.5}
-            ior={1.5}
-            color="#1B4B43"
-          />
-        </mesh>
+    <group ref={pillGroupRef} position={[0, 0, 0]}>
+      <Float speed={reduced ? 0 : 2} rotationIntensity={0.4} floatIntensity={0.6}>
+        <group ref={shellGroupRef} scale={[1.1, 1.1, 1.1]}>
 
-        {/* Bottom White Shell Half */}
-        <mesh position={[0, -0.75, 0]}>
-          <capsuleGeometry args={[0.7, 1, 32, 32]} />
-          <meshPhysicalMaterial
-            color="#ffffff"
-            roughness={0.2}
-            transmission={0.2}
-            thickness={1}
-          />
-        </mesh>
-
-        {/* Animated Internal Core (X-Ray Reveal Effect) */}
-        <group ref={coreRef}>
-          {/* Glowing Central Workflow Core */}
-          <mesh>
-            <icosahedronGeometry args={[0.38, 0]} />
-            <meshStandardMaterial
-              color="#00ffcc"
-              emissive="#00aa88"
-              emissiveIntensity={2}
-              wireframe
+          {/* ── Top Translucent Emerald Green Capsule Shell */}
+          <mesh position={[0, 1.1, 0]}>
+            <capsuleGeometry args={[0.95, 1.5, 36, 36]} />
+            <MeshTransmissionMaterial
+              backside
+              samples={16}
+              resolution={512}
+              transmission={0.94}
+              roughness={0.08}
+              thickness={0.6}
+              ior={1.52}
+              color="#0D5C3F"
+              chromaticAberration={0.06}
+              distortionScale={0.1}
+              temporalDistortion={0.05}
             />
           </mesh>
 
-          {/* Orbiting Mini Data Particles */}
-          {Array.from({ length: 6 }).map((_, i) => {
-            const angle = (i / 6) * Math.PI * 2;
-            return (
-              <mesh
-                key={i}
-                position={[
-                  Math.cos(angle) * 0.75,
-                  i % 2 === 0 ? 0.25 : -0.25,
-                  Math.sin(angle) * 0.75,
-                ]}
-              >
-                <sphereGeometry args={[0.07, 16, 16]} />
-                <meshStandardMaterial
-                  color="#ffffff"
-                  emissive="#00ffff"
-                  emissiveIntensity={3}
-                />
-              </mesh>
-            );
-          })}
+          {/* ── Bottom Porcelain White Capsule Shell */}
+          <mesh position={[0, -1.1, 0]}>
+            <capsuleGeometry args={[0.95, 1.5, 36, 36]} />
+            <meshPhysicalMaterial
+              color="#ffffff"
+              roughness={0.18}
+              metalness={0.05}
+              transmission={0.15}
+              thickness={1.1}
+              clearcoat={0.6}
+              clearcoatRoughness={0.1}
+            />
+          </mesh>
+
+          {/* ── Seam Divider Ring */}
+          <mesh position={[0, 0, 0]}>
+            <torusGeometry args={[0.952, 0.02, 16, 64]} />
+            <meshStandardMaterial color="#0D5C3F" roughness={0.1} metalness={0.3} />
+          </mesh>
+
+          {/* ── Animated Internal X-Ray Core */}
+          <group ref={coreRef} position={[0, 0.5, 0]}>
+            {/* Glowing Wireframe Core */}
+            <mesh>
+              <icosahedronGeometry args={[0.55, 0]} />
+              <meshStandardMaterial
+                color="#00FFCC"
+                emissive="#00AA88"
+                emissiveIntensity={2.5}
+                wireframe
+              />
+            </mesh>
+
+            {/* Inner Core Light Node */}
+            <pointLight color="#00FFCC" intensity={3} distance={3} />
+
+            {/* Orbiting Data Particles */}
+            {Array.from({ length: 8 }).map((_, i) => {
+              const angle = (i / 8) * Math.PI * 2;
+              return (
+                <mesh
+                  key={i}
+                  position={[
+                    Math.cos(angle) * 1.05,
+                    (i % 2 === 0 ? 0.35 : -0.35),
+                    Math.sin(angle) * 1.05,
+                  ]}
+                >
+                  <sphereGeometry args={[0.08, 16, 16]} />
+                  <meshStandardMaterial
+                    color="#ffffff"
+                    emissive="#00ffff"
+                    emissiveIntensity={3.5}
+                  />
+                </mesh>
+              );
+            })}
+          </group>
+
         </group>
-      </group>
-    </Float>
+      </Float>
+    </group>
   );
 };
 
 /* ─────────────────────────────────────────────────────────── */
-/*  Single floating capsule                                     */
+/*  Micro Floating Capsule Component                            */
 /* ─────────────────────────────────────────────────────────── */
-const AntiGravityCapsule: React.FC<{ def: CapsuleDef; reduced: boolean }> = ({ def, reduced }) => {
+const FloatingMicroCapsule: React.FC<{ def: MicroCapsuleDef; reduced: boolean }> = ({ def, reduced }) => {
   if (reduced) {
     return (
-      <mesh position={def.pos} rotation={def.rot}>
-        <capsuleGeometry args={[0.07, 0.22, 6, 14]} />
-        <meshStandardMaterial color={def.color} roughness={0.25} metalness={0.08} />
+      <mesh position={def.pos} rotation={def.rot} scale={0.65}>
+        <capsuleGeometry args={[0.12, 0.35, 8, 16]} />
+        <meshStandardMaterial color={def.color} roughness={0.2} />
       </mesh>
     );
   }
@@ -243,240 +291,75 @@ const AntiGravityCapsule: React.FC<{ def: CapsuleDef; reduced: boolean }> = ({ d
       floatIntensity={def.floatIntensity}
       floatingRange={def.floatRange}
     >
-      {/* Cap half A */}
-      <mesh position={[0, 0.11, 0]}>
-        <capsuleGeometry args={[0.065, 0.1, 6, 14]} />
-        <meshStandardMaterial
-          color={def.capColor}
-          roughness={0.18}
-          metalness={0.12}
-          envMapIntensity={1.2}
-        />
-      </mesh>
-      {/* Cap half B */}
-      <mesh position={[0, -0.11, 0]}>
-        <capsuleGeometry args={[0.065, 0.1, 6, 14]} />
-        <meshStandardMaterial
-          color={def.color}
-          roughness={0.22}
-          metalness={0.08}
-          envMapIntensity={1.0}
-        />
-      </mesh>
+      <group scale={0.65}>
+        <mesh position={[0, 0.18, 0]}>
+          <capsuleGeometry args={[0.12, 0.2, 8, 16]} />
+          <meshStandardMaterial color={def.capColor} roughness={0.15} metalness={0.1} />
+        </mesh>
+        <mesh position={[0, -0.18, 0]}>
+          <capsuleGeometry args={[0.12, 0.2, 8, 16]} />
+          <meshStandardMaterial color={def.color} roughness={0.2} metalness={0.05} />
+        </mesh>
+      </group>
     </Float>
   );
 };
 
 /* ─────────────────────────────────────────────────────────── */
-/*  Dynamic rim lights — shift softly with mouse               */
+/*  Dynamic Rim Lights                                         */
 /* ─────────────────────────────────────────────────────────── */
-const RimLights: React.FC<{ mouseX: number; mouseY: number }> = ({ mouseX, mouseY }) => {
-  const rimA = useRef<THREE.PointLight>(null);
-  const rimB = useRef<THREE.PointLight>(null);
-
-  const txA = useSpring(0.035, 0.85);
-  const tyA = useSpring(0.035, 0.85);
-  const txB = useSpring(0.03,  0.88);
-
-  useFrame((_, delta) => {
-    txA.setTarget(mouseX * 1.8 + 2.5);
-    tyA.setTarget(mouseY * -1.2 + 2.0);
-    txB.setTarget(mouseX * -1.5 - 2.2);
-
-    const ax = txA.step(delta);
-    const ay = tyA.step(delta);
-    const bx = txB.step(delta);
-
-    if (rimA.current) {
-      rimA.current.position.set(ax, ay, 1.8);
-      rimA.current.intensity = 0.7 + mouseX * 0.15;
-    }
-    if (rimB.current) {
-      rimB.current.position.set(bx, -1.0, 2.0);
-      rimB.current.intensity = 0.45 + mouseY * 0.1;
-    }
-  });
-
+const DynamicLights: React.FC<{ mouseX: number; mouseY: number }> = ({ mouseX, mouseY }) => {
   return (
     <>
-      {/* Warm amber rim */}
-      <pointLight ref={rimA} color="#D4922C" distance={8} decay={2} />
-      {/* Cool teal counter-rim */}
-      <pointLight ref={rimB} color="#4C9E8C" distance={8} decay={2} />
+      <ambientLight intensity={1.2} />
+      <directionalLight position={[6, 8, 5]} intensity={2.2} color="#ffffff" />
+      <pointLight position={[-5, -4, 4]} intensity={1.5} color="#0D5C3F" />
+      <pointLight position={[mouseX * 3 + 3, mouseY * -3 + 2, 4]} intensity={1.8} color="#00FFCC" />
     </>
   );
 };
 
 /* ─────────────────────────────────────────────────────────── */
-/*  Main bottle group + physics root                           */
-/* ─────────────────────────────────────────────────────────── */
-const BottleScene: React.FC<{
-  mouseX: number;
-  mouseY: number;
-  scrollY: number;
-  reduced: boolean;
-}> = ({ mouseX, mouseY, scrollY, reduced }) => {
-  const groupRef  = useRef<THREE.Group>(null);
-  const bottleRef = useRef<THREE.Group>(null);
-
-  /* Spring state for bottle group mouse tilt */
-  const springRY = useSpring(0.04, 0.82);
-  const springRX = useSpring(0.04, 0.82);
-
-  /* Idle bob accumulator */
-  const bobAcc = useRef(0);
-
-  /* Scroll normalisation — max effect at ~2000 px scroll */
-  const MAX_SCROLL = 2000;
-
-  useFrame((_, delta) => {
-    if (!groupRef.current || !bottleRef.current) return;
-
-    /* ── 1. Spring-physics mouse tilt on bottle group */
-    springRY.setTarget(mouseX * 0.38);
-    springRX.setTarget(-mouseY * 0.18);
-    const ry = springRY.step(delta);
-    const rx = springRX.step(delta);
-
-    bottleRef.current.rotation.y = ry;
-    bottleRef.current.rotation.x = rx;
-
-    /* ── 2. Idle anti-gravity bob on the entire scene group */
-    if (!reduced) {
-      bobAcc.current += delta;
-      const bob = Math.sin(bobAcc.current * 0.65) * 0.06
-                + Math.sin(bobAcc.current * 1.1)  * 0.02;
-      groupRef.current.position.y = bob;
-    }
-
-    /* ── 3. Scroll-driven CatmullRom drift */
-    const t01 = Math.min(scrollY / MAX_SCROLL, 1);
-    const curvePoint = SCROLL_CURVE.getPoint(t01);
-
-    groupRef.current.position.x = curvePoint.x;
-    groupRef.current.position.y += (curvePoint.y - groupRef.current.position.y) * 0.04;
-    groupRef.current.position.z  = curvePoint.z;
-
-    /* Gentle free-tumble rotation in scroll space */
-    if (!reduced) {
-      groupRef.current.rotation.z = t01 * 0.35 + Math.sin(t01 * Math.PI) * 0.12;
-    }
-  });
-
-  const glassMat = useMemo(() => GLASS, []);
-
-  return (
-    <group ref={groupRef}>
-      {/* ── Sparkles micro-particle field */}
-      {!reduced && (
-        <Sparkles
-          count={60}
-          scale={3.8}
-          size={0.6}
-          speed={0.18}
-          opacity={0.45}
-          color="#C47A1E"
-          noise={0.6}
-        />
-      )}
-
-      {/* ── Rim lights */}
-      <RimLights mouseX={mouseX} mouseY={mouseY} />
-
-      {/* ── Bottle geometry */}
-      <group ref={bottleRef}>
-        {/* Body */}
-        <mesh>
-          <cylinderGeometry args={[0.42, 0.45, 2.2, 52, 1, false]} />
-          <MeshTransmissionMaterial {...glassMat} />
-        </mesh>
-
-        {/* Shoulder taper */}
-        <mesh position={[0, 1.28, 0]}>
-          <cylinderGeometry args={[0.22, 0.42, 0.36, 52, 1, false]} />
-          <MeshTransmissionMaterial {...glassMat} />
-        </mesh>
-
-        {/* Neck */}
-        <mesh position={[0, 1.56, 0]}>
-          <cylinderGeometry args={[0.18, 0.22, 0.2, 36, 1, false]} />
-          <MeshTransmissionMaterial {...glassMat} />
-        </mesh>
-
-        {/* Cork */}
-        <mesh position={[0, 1.76, 0]}>
-          <cylinderGeometry args={[0.2, 0.18, 0.22, 36]} />
-          <meshStandardMaterial color="#8B6244" roughness={0.88} metalness={0.02} />
-        </mesh>
-        <mesh position={[0, 1.88, 0]}>
-          <cylinderGeometry args={[0.22, 0.22, 0.06, 36]} />
-          <meshStandardMaterial color="#9B7254" roughness={0.82} />
-        </mesh>
-
-        {/* Liquid fill */}
-        <mesh position={[0, -0.2, 0]}>
-          <cylinderGeometry args={[0.36, 0.38, 1.6, 44]} />
-          <meshStandardMaterial
-            color="#C47A1E" roughness={0.08} metalness={0.12}
-            transparent opacity={0.58}
-          />
-        </mesh>
-
-        {/* Label band */}
-        <mesh position={[0, -0.1, 0]}>
-          <cylinderGeometry args={[0.456, 0.456, 0.92, 52, 1, true]} />
-          <meshStandardMaterial
-            color="#F7F5F0" roughness={0.78} metalness={0}
-            transparent opacity={0.93} side={THREE.FrontSide}
-          />
-        </mesh>
-
-        {/* Label stripe */}
-        <mesh position={[0.435, -0.1, 0]} rotation={[0, Math.PI / 2, 0]}>
-          <planeGeometry args={[0.92, 0.2]} />
-          <meshStandardMaterial color="#1B4B43" side={THREE.FrontSide} />
-        </mesh>
-      </group>
-
-      {/* ── Featured Anti-Gravity Hero Core Pill with Transmission Shell & Orbiting Data Particles */}
-      <HeroCorePill reduced={reduced} />
-
-      {/* ── Anti-gravity floating capsules */}
-      {CAPSULES.map((def, i) => (
-        <AntiGravityCapsule key={i} def={def} reduced={reduced} />
-      ))}
-    </group>
-  );
-};
-
-/* ─────────────────────────────────────────────────────────── */
-/*  Canvas wrapper                                              */
+/*  Main Canvas Wrapper Export                                 */
 /* ─────────────────────────────────────────────────────────── */
 const Bottle3D: React.FC<Bottle3DProps> = ({ mouseX, mouseY, scrollY, reduced = false }) => {
   return (
-    <div style={{ width: 320, height: 500 }}>
+    <div style={{ width: '100%', height: '100%', minHeight: 480, position: 'relative' }}>
       <Canvas
-        camera={{ position: [0, 0.2, 4.8], fov: 34 }}
+        camera={{ position: [0, 0, 5.8], fov: 42 }}
         style={{ width: '100%', height: '100%' }}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
-        {/* Base lighting */}
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[4, 6, 3]} intensity={1.1} />
+        <DynamicLights mouseX={mouseX} mouseY={mouseY} />
 
-        {/* Fill light from below */}
-        <pointLight position={[0, -3, 2]} intensity={0.3} color="#F7F5F0" />
+        <Environment preset="city" />
 
-        {/* Environment for glass reflections */}
-        <Environment preset="warehouse" />
+        {/* Ambient sparkle particles */}
+        {!reduced && (
+          <Sparkles
+            count={70}
+            scale={5}
+            size={0.7}
+            speed={0.2}
+            opacity={0.5}
+            color="#00FFCC"
+            noise={0.7}
+          />
+        )}
 
-        <BottleScene
+        {/* Main 3D Anti-Gravity Capsule Pill */}
+        <MainHeroPill
           mouseX={mouseX}
           mouseY={mouseY}
           scrollY={scrollY}
           reduced={reduced}
         />
+
+        {/* Ambient Floating Micro-Capsules */}
+        {MICRO_CAPSULES.map((def, i) => (
+          <FloatingMicroCapsule key={i} def={def} reduced={reduced} />
+        ))}
       </Canvas>
     </div>
   );
