@@ -3,10 +3,11 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingCart, Package, FileText,
   Users, BarChart2, Settings, LogOut, Pill, Truck,
-  ChevronRight, CreditCard
+  ChevronRight, CreditCard, Sun, Moon
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useAlertStore } from '../../store/alertStore';
+import { useTheme } from '../../hooks/useTheme';
 
 interface NavItem {
   to: string;
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
 export const Sidebar: React.FC = () => {
   const { user, clearAuth } = useAuthStore();
   const { lowStockCount, expiringCount } = useAlertStore();
+  const { theme, toggleTheme } = useTheme();
   const [hovered, setHovered] = useState<string | null>(null);
 
   const filteredNav = navItems.filter(
@@ -178,6 +180,30 @@ export const Sidebar: React.FC = () => {
               {roleLabel[user?.role ?? ''] ?? user?.role}
             </div>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <button
+            onClick={toggleTheme}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              color: 'rgba(255,255,255,0.7)', fontSize: 12, flex: 1,
+              padding: '8px 12px', borderRadius: 8,
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+              cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.color = '#fff';
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.12)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)';
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)';
+            }}
+          >
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
         </div>
 
         <button

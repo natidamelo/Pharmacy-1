@@ -46,6 +46,26 @@
   --mkt-dur-slow:     0.75s;
 }
 
+/* ── Dark mode tokens ────────────────────────────────────────── */
+.mkt-root[data-theme="dark"],
+.mkt-root.dark,
+[data-theme="dark"] .mkt-root,
+.dark .mkt-root {
+  --mkt-bg:       #0A1916;   /* midnight apothecary dark */
+  --mkt-ink:      #F4F1EA;   /* warm paper white text */
+  --mkt-surface:  #122B25;   /* deep sage/teal surface */
+  --mkt-accent:   #D49746;   /* luminous warm amber */
+
+  --mkt-primary-light:  #296E63;
+  --mkt-primary-dark:   #091512;
+  --mkt-accent-light:   #E2AA5E;
+  --mkt-accent-pale:    #261B0E;
+  --mkt-ink-muted:      #9EB5AD;
+  --mkt-ink-subtle:     #6D8B81;
+  --mkt-border:         #1E3F37;
+  --mkt-border-light:   #152E28;
+}
+
 /* ── Reset & base ────────────────────────────────────────────── */
 .mkt-root,
 .mkt-root * {
