@@ -1,0 +1,243 @@
+/* ═══════════════════════════════════════════════════════════════════
+   PharmaSys Marketing Site — Scoped Design Tokens
+   All tokens use --mkt- prefix to avoid polluting the app shell.
+   Fonts: Fraunces (display), Inter (body), IBM Plex Mono (utility/data)
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@300..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* ── Palette tokens ─────────────────────────────────────────── */
+.mkt-root {
+  --mkt-primary:  #1B4B43;   /* deep apothecary teal-green */
+  --mkt-bg:       #F7F5F0;   /* warm paper white */
+  --mkt-accent:   #9C6B2E;   /* muted amber / old medicine-bottle glass */
+  --mkt-ink:      #16211D;   /* near-black, green-leaning */
+  --mkt-surface:  #DCE5DE;   /* soft sage secondary surfaces */
+
+  /* ── Derived ── */
+  --mkt-primary-light:  #246059;
+  --mkt-primary-dark:   #122e29;
+  --mkt-accent-light:   #C2873C;
+  --mkt-accent-pale:    #F2EAD8;
+  --mkt-ink-muted:      #3D5A50;
+  --mkt-ink-subtle:     #6B8079;
+  --mkt-border:         #C8D4C4;
+  --mkt-border-light:   #E3EBE4;
+
+  /* ── Typography ── */
+  --mkt-font-display: 'Fraunces', Georgia, serif;
+  --mkt-font-body:    'Inter', system-ui, sans-serif;
+  --mkt-font-mono:    'IBM Plex Mono', 'Courier New', monospace;
+
+  /* ── Spacing scale ── */
+  --mkt-space-xs:  0.25rem;
+  --mkt-space-sm:  0.5rem;
+  --mkt-space-md:  1rem;
+  --mkt-space-lg:  2rem;
+  --mkt-space-xl:  4rem;
+  --mkt-space-2xl: 6rem;
+  --mkt-space-3xl: 8rem;
+
+  /* ── Motion ── */
+  --mkt-ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
+  --mkt-ease-in-out:  cubic-bezier(0.4, 0, 0.2, 1);
+  --mkt-dur-fast:     0.2s;
+  --mkt-dur-mid:      0.45s;
+  --mkt-dur-slow:     0.75s;
+}
+
+/* ── Reset & base ────────────────────────────────────────────── */
+.mkt-root,
+.mkt-root * {
+  box-sizing: border-box;
+}
+
+.mkt-root {
+  background-color: var(--mkt-bg);
+  color: var(--mkt-ink);
+  font-family: var(--mkt-font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── Focus states — visible, branded ────────────────────────── */
+.mkt-root :focus-visible {
+  outline: 2px solid var(--mkt-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── Typography roles ────────────────────────────────────────── */
+.mkt-display {
+  font-family: var(--mkt-font-display);
+  font-feature-settings: 'ss01' 1, 'ss02' 1; /* Fraunces stylistic sets */
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--mkt-ink);
+}
+
+.mkt-body {
+  font-family: var(--mkt-font-body);
+  color: var(--mkt-ink-muted);
+  line-height: 1.65;
+}
+
+.mkt-mono {
+  font-family: var(--mkt-font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  color: var(--mkt-ink-subtle);
+}
+
+/* ── Layout container ────────────────────────────────────────── */
+.mkt-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--mkt-space-lg);
+}
+
+@media (max-width: 768px) {
+  .mkt-container {
+    padding-inline: var(--mkt-space-md);
+  }
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.mkt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-family: var(--mkt-font-body);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color var(--mkt-dur-fast) var(--mkt-ease-in-out),
+    transform var(--mkt-dur-fast) var(--mkt-ease-out),
+    box-shadow var(--mkt-dur-fast) var(--mkt-ease-in-out);
+  white-space: nowrap;
+}
+
+.mkt-btn:hover { transform: translateY(-1px); }
+.mkt-btn:active { transform: translateY(0); }
+
+.mkt-btn-primary {
+  background-color: var(--mkt-primary);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(27,75,67,.25), 0 4px 12px rgba(27,75,67,.15);
+}
+.mkt-btn-primary:hover {
+  background-color: var(--mkt-primary-light);
+  box-shadow: 0 2px 8px rgba(27,75,67,.3), 0 8px 24px rgba(27,75,67,.18);
+}
+
+.mkt-btn-ghost {
+  background-color: transparent;
+  color: var(--mkt-primary);
+  border: 1.5px solid var(--mkt-border);
+}
+.mkt-btn-ghost:hover {
+  border-color: var(--mkt-primary);
+  background-color: rgba(27,75,67,.05);
+}
+
+/* ── Section spacing ─────────────────────────────────────────── */
+.mkt-section {
+  padding-block: var(--mkt-space-3xl);
+}
+
+@media (max-width: 768px) {
+  .mkt-section {
+    padding-block: var(--mkt-space-2xl);
+  }
+}
+
+/* ── Section labels ──────────────────────────────────────────── */
+.mkt-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--mkt-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mkt-accent);
+  margin-bottom: 1rem;
+}
+
+.mkt-eyebrow::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 1.5px;
+  background-color: var(--mkt-accent);
+}
+
+/* ── Scroll reveal animations ────────────────────────────────── */
+@keyframes mkt-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mkt-reveal-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.mkt-reveal {
+  opacity: 0;
+  animation: mkt-reveal-up var(--mkt-dur-slow) var(--mkt-ease-out) forwards;
+}
+
+.mkt-reveal-fade {
+  opacity: 0;
+  animation: mkt-reveal-fade var(--mkt-dur-slow) var(--mkt-ease-out) forwards;
+}
+
+/* Staggered delays */
+.mkt-delay-1 { animation-delay: 0.1s; }
+.mkt-delay-2 { animation-delay: 0.22s; }
+.mkt-delay-3 { animation-delay: 0.34s; }
+.mkt-delay-4 { animation-delay: 0.46s; }
+.mkt-delay-5 { animation-delay: 0.58s; }
+
+/* ── Reduced motion: strip all animations ────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .mkt-root *,
+  .mkt-root *::before,
+  .mkt-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Keep elements visible when animations are disabled */
+  .mkt-reveal,
+  .mkt-reveal-fade {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Divider ─────────────────────────────────────────────────── */
+.mkt-divider {
+  width: 48px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--mkt-accent), transparent);
+  border-radius: 2px;
+  margin-block: var(--mkt-space-lg);
+}

@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Login } from './pages/Login';
+
+// Marketing site — lazy-loaded; R3F/drei/motion tree never enters the app bundle
+const MarketingSite = lazy(() => import('./pages/marketing/MarketingSite'));
 import { AppLayout } from './components/layout/AppLayout';
 import { Dashboard } from './pages/Dashboard';
 import { POS } from './pages/POS';
@@ -19,8 +22,17 @@ const App: React.FC = () => {
     <BrowserRouter>
       <Toaster position="top-right" toastOptions={{ className: 'font-body text-sm', style: { background: '#15191C', color: '#fff' } }} />
       <Routes>
-        {/* ── Public routes ── */}
-        <Route path="/"      element={<Login />} />
+        {/* ── Marketing site (root) ── */}
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={null}>
+              <MarketingSite />
+            </Suspense>
+          }
+        />
+
+        {/* ── Auth routes ── */}
         <Route path="/login" element={<Login />} />
 
         {/* ── Protected app routes — pathless AppLayout wrapper ── */}
