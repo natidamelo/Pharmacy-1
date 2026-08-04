@@ -7,20 +7,25 @@ const Bottle3D = lazy(() => import('../components/Bottle3D'));
 const HeroSection: React.FC = () => {
   const heroRef = useRef<HTMLElement>(null);
   const bottleRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [scrollY, setScrollY] = useState(0);
-  const [use3D, setUse3D] = useState(false);
+  const [mousePos, setMousePos]   = useState({ x: 0, y: 0 });
+  const [scrollY, setScrollY]     = useState(0);
+  const [use3D, setUse3D]         = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   // Check if 3D is wanted — respect user preference & perf budget
   useEffect(() => {
-    const mediaOk = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+
     // Use 3D on desktop only (avoids mobile GPU overhead)
     const desktopOk = window.innerWidth >= 1024;
-    // Signal we need a small delay before loading 3D (after first paint)
-    if (mediaOk && desktopOk) {
+    if (desktopOk) {                      // 3D canvas even in reduced mode – just static
       const t = setTimeout(() => setUse3D(true), 400);
-      return () => clearTimeout(t);
+      return () => { clearTimeout(t); mq.removeEventListener('change', onChange); };
     }
+    return () => mq.removeEventListener('change', onChange);
   }, []);
 
   // Mouse parallax for the bottle
@@ -140,7 +145,12 @@ const HeroSection: React.FC = () => {
                   draggable={false}
                 />
               }>
-                <Bottle3D mouseX={mousePos.x} mouseY={mousePos.y} scrollY={scrollY} />
+                <Bottle3D
+                  mouseX={mousePos.x}
+                  mouseY={mousePos.y}
+                  scrollY={scrollY}
+                  reduced={reducedMotion}
+                />
               </Suspense>
             ) : (
               <img
@@ -297,7 +307,7 @@ const HeroSection: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          min-height: 520px;
+          min-height: 560px;
         }
 
         .mkt-hero__orb {
