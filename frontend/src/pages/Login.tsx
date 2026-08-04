@@ -1,105 +1,61 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Pill,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  Loader2,
-  Mail,
-  Lock,
-  ShieldCheck,
-  Sparkles,
-  Activity,
-  Zap,
-  Check,
-  LockKeyhole,
-  Building2,
-  AlertCircle
-} from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Loader2, AlertCircle, Check } from 'lucide-react';
 import { authApi } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
-/* ── Demo Accounts Preset Data ── */
+/* ── Demo accounts ───────────────────────────────── */
 const DEMO_ACCOUNTS = [
-  {
-    role: 'Admin',
-    email: 'admin@pharmacy.com',
-    pass: 'Admin@1234',
-    badge: 'Full Access',
-  },
-  {
-    role: 'Pharmacist',
-    email: 'pharmacist@pharmacy.com',
-    pass: 'Admin@1234',
-    badge: 'Rx Operations',
-  },
-  {
-    role: 'Cashier',
-    email: 'cashier@pharmacy.com',
-    pass: 'Admin@1234',
-    badge: 'POS & Sales',
-  },
+  { role: 'Admin',       email: 'admin@pharmacy.com',      pass: 'Admin@1234', badge: 'Full access' },
+  { role: 'Pharmacist',  email: 'pharmacist@pharmacy.com', pass: 'Admin@1234', badge: 'Rx operations' },
+  { role: 'Cashier',     email: 'cashier@pharmacy.com',    pass: 'Admin@1234', badge: 'POS & sales' },
 ];
 
-const HERO_FEATURES = [
-  {
-    icon: Zap,
-    title: 'High-Speed POS & Billing',
-    desc: 'Lightning-fast checkout with barcode scanning, auto-receipts & multi-pay.',
-  },
-  {
-    icon: Activity,
-    title: 'Smart Inventory & Batch FEFO',
-    desc: 'Real-time stock tracking with automated expiry alerts & supplier reordering.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Enterprise Security & Audit',
-    desc: '256-bit SSL, role-based access controls & HIPAA compliance standards.',
-  },
+/* ── Left-panel data points ──────────────────────── */
+const STATS = [
+  { value: '480+',  label: 'pharmacies' },
+  { value: '2.4M',  label: 'dispensed / month' },
+  { value: '99.7%', label: 'uptime SLA' },
 ];
+
+const CAPABILITIES = [
+  { num: '01', title: 'Intake',   body: 'Validate prescriptions and check interactions before you reach the shelf.' },
+  { num: '02', title: 'Dispense', body: 'Pick, confirm lot and expiry, print label — stock updates in real time.' },
+  { num: '03', title: 'Track',    body: 'Full chain-of-custody log. Audit reports in seconds, not a morning.' },
+];
+
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+};
 
 export const Login: React.FC = () => {
-  const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const navigate  = useNavigate();
+  const setAuth   = useAuthStore((s) => s.setAuth);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email,        setEmail]        = useState('');
+  const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [rememberMe,   setRememberMe]   = useState(true);
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState('');
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
 
-  // Dynamic greeting based on user local time
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const handleDemoFill = (acc: (typeof DEMO_ACCOUNTS)[0]) => {
+  const handleDemoFill = (acc: typeof DEMO_ACCOUNTS[0]) => {
     setEmail(acc.email);
     setPassword(acc.pass);
     setSelectedDemo(acc.role);
     setError('');
-    toast.success(`Loaded credentials for ${acc.role}`, {
-      icon: '⚡',
-      duration: 2000,
-    });
+    toast.success(`Loaded ${acc.role} credentials`, { icon: '⚡', duration: 1800 });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError('Please fill in all required fields.');
-      return;
-    }
-
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
     setLoading(true);
     setError('');
     try {
@@ -108,10 +64,7 @@ export const Login: React.FC = () => {
       toast.success(`Welcome back, ${data.user?.name || 'User'}!`);
       navigate('/dashboard');
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        'Invalid email or password. Please try again.';
-      setError(msg);
+      setError(err?.response?.data?.message || 'Invalid email or password.');
       toast.error('Authentication failed');
     } finally {
       setLoading(false);
@@ -119,328 +72,767 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-950 font-sans text-slate-100 selection:bg-emerald-500 selection:text-white overflow-x-hidden">
-      {/* ══════════════════════════════════════════════════════════════════════
-         LEFT HERO / BRAND SHOWCASE PANEL (Desktop)
-      ══════════════════════════════════════════════════════════════════════ */}
-      <div className="relative hidden lg:flex lg:w-1/2 xl:w-[55%] flex-col justify-between p-12 xl:p-16 overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950/40 to-slate-900 border-r border-slate-800/60">
-        {/* Decorative Background Elements */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-emerald-500/10 rounded-full filter blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-teal-500/10 rounded-full filter blur-3xl pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(#059669_1px,transparent_1px)] [background-size:24px_24px] opacity-15 pointer-events-none" />
+    <div className="login-root">
 
-        {/* Top Brand Banner */}
-        <div className="relative z-10">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-xl"
-          >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 p-[1.5px] shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform duration-300">
-              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                <Pill size={22} className="text-emerald-400 -rotate-45" />
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
-                Pharma<span className="text-emerald-400">Sys</span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  v2.5
-                </span>
-              </span>
-              <span className="text-xs text-slate-400 font-medium">
-                Healthcare Management Portal
-              </span>
-            </div>
-          </Link>
+      {/* ══ LEFT — brand panel ══════════════════════════════════ */}
+      <div className="login-left" aria-hidden="true">
+
+        {/* Background texture */}
+        <div className="login-left__bg">
+          <div className="login-left__grid" />
+          <div className="login-left__glow login-left__glow--a" />
+          <div className="login-left__glow login-left__glow--b" />
         </div>
 
-        {/* Middle Hero Content */}
-        <div className="relative z-10 my-auto py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold mb-6 backdrop-blur-md">
-              <Sparkles size={14} className="text-emerald-400 animate-pulse" />
-              Next-Generation Pharmacy Platform
+        {/* Logo */}
+        <Link to="/" className="login-left__logo" tabIndex={-1}>
+          <span className="login-left__logo-hex" aria-hidden="true">⬡</span>
+          <span className="login-left__logo-text">Pharma<strong>Sys</strong></span>
+        </Link>
+
+        {/* Hero copy */}
+        <div className="login-left__hero">
+          <p className="login-left__eyebrow">
+            <span className="login-left__eyebrow-line" />
+            Pharmacy management
+          </p>
+
+          <h1 className="login-left__headline">
+            Every dispensed<br />unit,<br />accounted for.
+          </h1>
+
+          <p className="login-left__sub">
+            One system for intake, dispensing, inventory,
+            billing and compliance — designed on the
+            dispensary floor, not in a boardroom.
+          </p>
+
+          {/* Stats row */}
+          <div className="login-left__stats">
+            {STATS.map((s, i) => (
+              <React.Fragment key={s.label}>
+                {i > 0 && <div className="login-left__stat-sep" aria-hidden="true" />}
+                <div className="login-left__stat">
+                  <span className="login-left__stat-num">{s.value}</span>
+                  <span className="login-left__stat-label">{s.label}</span>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
+        {/* Capability list */}
+        <div className="login-left__caps">
+          {CAPABILITIES.map((c) => (
+            <div key={c.num} className="login-left__cap">
+              <span className="login-left__cap-num">{c.num}</span>
+              <div>
+                <span className="login-left__cap-title">{c.title}</span>
+                <span className="login-left__cap-body">{c.body}</span>
+              </div>
             </div>
+          ))}
+        </div>
 
-            <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight text-white leading-[1.15] mb-4">
-              Streamline operations, <br />
-              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
-                empower patient care.
-              </span>
-            </h1>
+        {/* Footer strip */}
+        <div className="login-left__foot">
+          <span className="login-left__online">
+            <span className="login-left__dot" />
+            System online · 99.7% uptime
+          </span>
+          <span>AES-256 · HIPAA aligned</span>
+        </div>
+      </div>
 
-            <p className="text-slate-400 text-base max-w-lg font-normal leading-relaxed mb-8">
-              All-in-one Intelligent Pharmacy Suite for POS sales, inventory control, prescription tracking, and compliance management.
+      {/* ══ RIGHT — auth form ══════════════════════════════════ */}
+      <div className="login-right">
+
+        {/* Top bar */}
+        <div className="login-right__topbar">
+          {/* Mobile logo */}
+          <Link to="/" className="login-right__mobile-logo">
+            <span aria-hidden="true">⬡</span>
+            Pharma<strong>Sys</strong>
+          </Link>
+          <a href="mailto:support@pharmasys.com" className="login-right__support">
+            Contact support
+          </a>
+        </div>
+
+        {/* Form card */}
+        <motion.div
+          className="login-form-wrap"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Greeting */}
+          <div className="login-form__header">
+            <h2 className="login-form__greeting">
+              {getGreeting()} —<br />sign in below.
+            </h2>
+            <p className="login-form__sub">
+              Access your PharmaSys portal.
             </p>
+          </div>
 
-            {/* Feature Cards Grid */}
-            <div className="space-y-4 max-w-lg">
-              {HERO_FEATURES.map((feat, idx) => {
-                const IconComponent = feat.icon;
+          {/* Demo quick-fill */}
+          <div className="login-demo">
+            <div className="login-demo__header">
+              <span className="login-demo__label">Quick demo login</span>
+              <span className="login-demo__hint">click to fill</span>
+            </div>
+            <div className="login-demo__grid">
+              {DEMO_ACCOUNTS.map((acc) => {
+                const active = selectedDemo === acc.role;
                 return (
-                  <motion.div
-                    key={feat.title}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 + idx * 0.1 }}
-                    className="flex items-start gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md hover:border-emerald-500/40 transition-colors group"
+                  <button
+                    key={acc.role}
+                    type="button"
+                    onClick={() => handleDemoFill(acc)}
+                    className={`login-demo__btn${active ? ' login-demo__btn--active' : ''}`}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-110 transition-transform">
-                      <IconComponent size={20} />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-200 group-hover:text-emerald-300 transition-colors">
-                        {feat.title}
-                      </h3>
-                      <p className="text-xs text-slate-400 leading-relaxed mt-0.5">
-                        {feat.desc}
-                      </p>
-                    </div>
-                  </motion.div>
+                    {active && (
+                      <span className="login-demo__check" aria-hidden="true">
+                        <Check size={11} />
+                      </span>
+                    )}
+                    <span className="login-demo__role">{acc.role}</span>
+                    <span className="login-demo__badge">{acc.badge}</span>
+                  </button>
                 );
               })}
             </div>
-          </motion.div>
-        </div>
-
-        {/* Bottom System Health & Trust Badge */}
-        <div className="relative z-10 pt-6 border-t border-slate-800/60 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            System Online • 99.98% Uptime
-          </div>
-          <div className="flex items-center gap-4 text-xs text-slate-400">
-            <span className="flex items-center gap-1">
-              <LockKeyhole size={13} className="text-emerald-400" /> 256-Bit SSL
-            </span>
-            <span className="flex items-center gap-1">
-              <Building2 size={13} className="text-teal-400" /> HIPAA Ready
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ══════════════════════════════════════════════════════════════════════
-         RIGHT AUTH FORM PANEL
-      ══════════════════════════════════════════════════════════════════════ */}
-      <div className="w-full lg:w-1/2 xl:w-[45%] flex flex-col justify-between p-6 sm:p-10 xl:p-14 bg-slate-900/90 lg:bg-slate-950 relative min-h-screen lg:min-h-0">
-        {/* Subtle Ambient Glow */}
-        <div className="absolute top-1/3 right-0 w-80 h-80 bg-emerald-600/10 rounded-full filter blur-3xl pointer-events-none" />
-
-        {/* Top Header (Mobile Brand + Link) */}
-        <div className="flex items-center justify-between mb-8 lg:mb-4 relative z-10">
-          <div className="lg:hidden flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 p-[1px] shadow-md shadow-emerald-500/20">
-              <div className="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center">
-                <Pill size={18} className="text-emerald-400 -rotate-45" />
-              </div>
-            </div>
-            <span className="text-xl font-black text-white">
-              Pharma<span className="text-emerald-400">Sys</span>
-            </span>
           </div>
 
-          <div className="ml-auto text-xs text-slate-400 flex items-center gap-2">
-            <span>Need help?</span>
-            <a
-              href="mailto:support@pharmasys.com"
-              className="text-emerald-400 hover:text-emerald-300 font-semibold hover:underline"
-            >
-              Contact Support
-            </a>
-          </div>
-        </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="login-form" noValidate>
 
-        {/* Center Auth Card */}
-        <div className="max-w-md w-full mx-auto my-auto relative z-10 py-4">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {/* Header Titles */}
-            <div className="mb-6">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">
-                {getGreeting()} <span className="inline-block animate-bounce">👋</span>
-              </h2>
-              <p className="text-sm text-slate-400">
-                Enter your credentials to access the PharmaSys portal.
-              </p>
+            {/* Email */}
+            <div className="login-field">
+              <label htmlFor="login-email" className="login-field__label">
+                Email address
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                className="login-field__input"
+                placeholder="name@pharmacy.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
             </div>
 
-            {/* ── DEMO CREDENTIALS QUICK FILL PILLS ── */}
-            <div className="mb-6 p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  <Sparkles size={13} className="text-amber-400" />
-                  Quick Demo Login
-                </div>
-                <span className="text-[10px] text-slate-500 font-medium">Click to auto-fill</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {DEMO_ACCOUNTS.map((acc) => {
-                  const isSelected = selectedDemo === acc.role;
-                  return (
-                    <button
-                      key={acc.role}
-                      type="button"
-                      onClick={() => handleDemoFill(acc)}
-                      className={`relative flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-medium transition-all duration-200 cursor-pointer ${
-                        isSelected
-                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-md shadow-emerald-500/10 scale-[1.02]'
-                          : 'bg-slate-800/50 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
-                      }`}
-                    >
-                      {isSelected && (
-                        <div className="absolute top-1 right-1">
-                          <Check size={12} className="text-emerald-400" />
-                        </div>
-                      )}
-                      <span className="font-bold text-white text-xs mb-0.5">{acc.role}</span>
-                      <span className="text-[10px] text-slate-400 tracking-tight">{acc.badge}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ── LOGIN FORM ── */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email Address Field */}
-              <div>
-                <label
-                  htmlFor="login-email"
-                  className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5"
+            {/* Password */}
+            <div className="login-field">
+              <div className="login-field__row">
+                <label htmlFor="login-password" className="login-field__label">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  className="login-field__forgot"
+                  onClick={() => toast('Contact your administrator to reset credentials.', { icon: 'ℹ️' })}
                 >
-                  Email Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                    <Mail size={18} />
-                  </div>
-                  <input
-                    id="login-email"
-                    type="email"
-                    placeholder="name@pharmacy.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                    className="w-full pl-10 pr-4 py-3.5 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
-                  />
-                </div>
+                  Forgot password?
+                </button>
               </div>
-
-              {/* Password Field */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label
-                    htmlFor="login-password"
-                    className="block text-xs font-bold text-slate-300 uppercase tracking-wider"
-                  >
-                    Password
-                  </label>
-                  <a
-                    href="#forgot"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toast('Please contact your administrator to reset credentials.', {
-                        icon: 'ℹ️',
-                      });
-                    }}
-                    className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold hover:underline"
-                  >
-                    Forgot password?
-                  </a>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                    <Lock size={18} />
-                  </div>
-                  <input
-                    id="login-password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    className="w-full pl-10 pr-11 py-3.5 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-emerald-400 transition-colors p-1 cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
+              <div className="login-field__pw-wrap">
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="login-field__input login-field__input--pw"
+                  placeholder="••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="login-field__eye"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
               </div>
+            </div>
 
-              {/* Remember Me Checkbox */}
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-slate-950 accent-emerald-600"
-                  />
-                  <span className="text-xs text-slate-300 font-medium">Keep me signed in</span>
-                </label>
-              </div>
+            {/* Remember me */}
+            <label className="login-remember">
+              <input
+                type="checkbox"
+                className="login-remember__check"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span className="login-remember__label">Keep me signed in</span>
+            </label>
 
-              {/* Error Alert Box */}
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: 'auto' }}
-                    exit={{ opacity: 0, y: -8, height: 0 }}
-                    className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-start gap-2.5"
-                  >
-                    <AlertCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
-                    <span>{error}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            {/* Error */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  className="login-error"
+                  initial={{ opacity: 0, y: -6, height: 0 }}
+                  animate={{ opacity: 1, y: 0,  height: 'auto' }}
+                  exit={  { opacity: 0, y: -6, height: 0 }}
+                >
+                  <AlertCircle size={15} className="login-error__icon" aria-hidden="true" />
+                  <span>{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 px-6 rounded-xl font-bold text-white text-sm bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/30 hover:shadow-emerald-500/40 active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-3"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Authenticating credentials…
-                  </>
-                ) : (
-                  <>
-                    Sign In to Portal <ArrowRight size={18} />
-                  </>
-                )}
-              </button>
-            </form>
-          </motion.div>
-        </div>
+            {/* Submit */}
+            <button
+              type="submit"
+              id="login-submit"
+              disabled={loading}
+              className="login-submit"
+            >
+              {loading ? (
+                <><Loader2 size={17} className="login-submit__spinner" /> Authenticating…</>
+              ) : (
+                <>Sign in to portal <ArrowRight size={17} /></>
+              )}
+            </button>
+          </form>
 
-        {/* Footer info */}
-        <div className="relative z-10 text-center pt-6 border-t border-slate-800/40 mt-6">
-          <p className="text-xs text-slate-500 font-medium">
-            © {new Date().getFullYear()} PharmaSys Inc. • Secure Health Data Encryption
+          {/* Back to marketing */}
+          <p className="login-back">
+            <Link to="/" className="login-back__link">← Back to site</Link>
           </p>
+        </motion.div>
+
+        {/* Bottom copyright */}
+        <div className="login-right__foot">
+          <span>© {new Date().getFullYear()} PharmaSys · Secure Health Data Encryption</span>
         </div>
       </div>
+
+      {/* ══ Scoped styles ══════════════════════════════════════ */}
+      <style>{`
+        /* ── Tokens (shadows the app's global vars only inside .login-root) */
+        .login-root {
+          --lk-primary:        #1B4B43;
+          --lk-primary-dark:   #122e29;
+          --lk-bg:             #F7F5F0;
+          --lk-accent:         #9C6B2E;
+          --lk-accent-light:   #C2873C;
+          --lk-accent-pale:    #F2EAD8;
+          --lk-ink:            #16211D;
+          --lk-ink-muted:      #3D5A50;
+          --lk-ink-subtle:     #6B8079;
+          --lk-surface:        #DCE5DE;
+          --lk-border:         #C8D4C4;
+          --lk-border-light:   #E3EBE4;
+          --lk-error:          #9B2335;
+
+          --lk-font-display: 'Fraunces', Georgia, serif;
+          --lk-font-body:    'Inter', system-ui, sans-serif;
+          --lk-font-mono:    'IBM Plex Mono', monospace;
+
+          --lk-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+          min-height: 100svh;
+          display: flex;
+          font-family: var(--lk-font-body);
+          background-color: var(--lk-bg);
+          color: var(--lk-ink);
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .login-root * { box-sizing: border-box; }
+
+        .login-root :focus-visible {
+          outline: 2px solid var(--lk-accent);
+          outline-offset: 3px;
+          border-radius: 4px;
+        }
+
+        /* ══ LEFT PANEL ════════════════════════════════════════ */
+        .login-left {
+          position: relative;
+          display: none;
+          flex-direction: column;
+          justify-content: space-between;
+          width: 50%;
+          min-height: 100svh;
+          padding: 3rem 3.5rem;
+          background-color: var(--lk-primary-dark);
+          overflow: hidden;
+        }
+
+        @media (min-width: 1024px) { .login-left { display: flex; } }
+        @media (min-width: 1280px) { .login-left { width: 55%; padding: 3.5rem 4rem; } }
+
+        /* Background */
+        .login-left__bg { position: absolute; inset: 0; pointer-events: none; }
+
+        .login-left__grid {
+          position: absolute; inset: 0;
+          background-image:
+            linear-gradient(rgba(247,245,240,.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(247,245,240,.06) 1px, transparent 1px);
+          background-size: 48px 48px;
+          mask-image: radial-gradient(ellipse 90% 90% at 30% 60%, black 20%, transparent 80%);
+        }
+
+        .login-left__glow {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+        }
+        .login-left__glow--a {
+          width: 480px; height: 480px;
+          top: -100px; left: -100px;
+          background: radial-gradient(circle, rgba(156,107,46,.18), transparent 70%);
+        }
+        .login-left__glow--b {
+          width: 360px; height: 360px;
+          bottom: -80px; right: -60px;
+          background: radial-gradient(circle, rgba(27,75,67,.35), transparent 70%);
+        }
+
+        /* Logo */
+        .login-left__logo {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          text-decoration: none;
+          color: #F7F5F0;
+          font-family: var(--lk-font-body);
+          font-size: 1.0625rem;
+          letter-spacing: -0.01em;
+        }
+        .login-left__logo-hex { color: var(--lk-accent-light); font-size: 1.2rem; }
+        .login-left__logo-text strong { color: var(--lk-accent-light); font-weight: 700; }
+
+        /* Hero copy */
+        .login-left__hero {
+          position: relative;
+          margin-block: auto;
+          padding-block: 2rem;
+        }
+
+        .login-left__eyebrow {
+          display: flex;
+          align-items: center;
+          gap: 0.625rem;
+          font-family: var(--lk-font-mono);
+          font-size: 0.75rem;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--lk-accent-light);
+          margin-bottom: 1.25rem;
+        }
+        .login-left__eyebrow-line {
+          display: block; width: 20px; height: 1.5px;
+          background-color: var(--lk-accent-light);
+        }
+
+        .login-left__headline {
+          font-family: var(--lk-font-display);
+          font-size: clamp(2.5rem, 3.5vw, 3.5rem);
+          font-weight: 700;
+          color: #F7F5F0;
+          letter-spacing: -0.025em;
+          line-height: 1.1;
+          margin-bottom: 1.25rem;
+        }
+
+        .login-left__sub {
+          font-family: var(--lk-font-body);
+          font-size: 0.9375rem;
+          color: rgba(247,245,240,.6);
+          line-height: 1.65;
+          max-width: 380px;
+          margin-bottom: 2rem;
+        }
+
+        /* Stats */
+        .login-left__stats {
+          display: flex;
+          align-items: center;
+          gap: 1.25rem;
+          flex-wrap: wrap;
+          padding: 1.25rem 1.5rem;
+          background: rgba(247,245,240,.05);
+          border: 1px solid rgba(247,245,240,.1);
+          border-radius: 10px;
+          backdrop-filter: blur(8px);
+        }
+        .login-left__stat { display: flex; flex-direction: column; gap: 2px; }
+        .login-left__stat-num {
+          font-family: var(--lk-font-display);
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #F7F5F0;
+          letter-spacing: -0.02em;
+          line-height: 1;
+        }
+        .login-left__stat-label {
+          font-family: var(--lk-font-mono);
+          font-size: 0.7rem;
+          letter-spacing: 0.04em;
+          color: rgba(247,245,240,.45);
+        }
+        .login-left__stat-sep {
+          width: 1px; height: 32px;
+          background: rgba(247,245,240,.12);
+        }
+
+        /* Capabilities */
+        .login-left__caps {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+          border-top: 1px solid rgba(247,245,240,.1);
+          padding-top: 1.75rem;
+        }
+        .login-left__cap {
+          display: flex;
+          gap: 1rem;
+          align-items: flex-start;
+        }
+        .login-left__cap-num {
+          font-family: var(--lk-font-mono);
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--lk-accent-light);
+          letter-spacing: 0.08em;
+          flex-shrink: 0;
+          padding-top: 2px;
+          width: 28px;
+        }
+        .login-left__cap-title {
+          display: block;
+          font-family: var(--lk-font-body);
+          font-weight: 600;
+          font-size: 0.875rem;
+          color: #F7F5F0;
+          margin-bottom: 2px;
+        }
+        .login-left__cap-body {
+          display: block;
+          font-size: 0.8125rem;
+          color: rgba(247,245,240,.5);
+          line-height: 1.5;
+        }
+
+        /* Left foot */
+        .login-left__foot {
+          position: relative;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 1.5rem;
+          border-top: 1px solid rgba(247,245,240,.08);
+          font-family: var(--lk-font-mono);
+          font-size: 0.6875rem;
+          letter-spacing: 0.04em;
+          color: rgba(247,245,240,.3);
+        }
+        .login-left__online {
+          display: flex; align-items: center; gap: 0.5rem;
+        }
+        .login-left__dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #4ade80;
+          box-shadow: 0 0 0 2px rgba(74,222,128,.25);
+        }
+
+        /* ══ RIGHT PANEL ═══════════════════════════════════════ */
+        .login-right {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-height: 100svh;
+          background-color: var(--lk-bg);
+          padding: 1.75rem 1.5rem;
+          position: relative;
+        }
+
+        @media (min-width: 640px)  { .login-right { padding: 2.5rem; } }
+        @media (min-width: 1024px) { .login-right { padding: 3rem 3.5rem; } }
+
+        /* Top bar */
+        .login-right__topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 1.5rem;
+        }
+
+        .login-right__mobile-logo {
+          display: inline-flex; align-items: center; gap: 0.4rem;
+          font-family: var(--lk-font-body);
+          font-size: 1rem; letter-spacing: -0.01em;
+          color: var(--lk-ink); text-decoration: none;
+        }
+        .login-right__mobile-logo strong { color: var(--lk-primary); font-weight: 700; }
+        .login-right__mobile-logo span   { color: var(--lk-primary); font-size: 1.1rem; }
+
+        @media (min-width: 1024px) { .login-right__mobile-logo { display: none; } }
+
+        .login-right__support {
+          margin-left: auto;
+          font-size: 0.8125rem;
+          color: var(--lk-ink-subtle);
+          text-decoration: none;
+          transition: color 0.15s;
+        }
+        .login-right__support:hover { color: var(--lk-primary); }
+
+        /* Form wrap */
+        .login-form-wrap {
+          max-width: 420px;
+          width: 100%;
+          margin: auto;
+          padding-block: 1rem;
+        }
+
+        /* Header */
+        .login-form__header { margin-bottom: 1.75rem; }
+
+        .login-form__greeting {
+          font-family: var(--lk-font-display);
+          font-size: clamp(1.75rem, 3vw, 2.5rem);
+          font-weight: 600;
+          color: var(--lk-ink);
+          letter-spacing: -0.025em;
+          line-height: 1.15;
+          margin-bottom: 0.5rem;
+        }
+
+        .login-form__sub {
+          font-size: 0.9rem;
+          color: var(--lk-ink-subtle);
+        }
+
+        /* Demo quick-fill */
+        .login-demo {
+          background: var(--lk-surface);
+          border: 1px solid var(--lk-border-light);
+          border-radius: 10px;
+          padding: 1rem 1.125rem;
+          margin-bottom: 1.5rem;
+        }
+        .login-demo__header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 0.75rem;
+        }
+        .login-demo__label {
+          font-family: var(--lk-font-mono);
+          font-size: 0.7rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: var(--lk-ink-muted);
+        }
+        .login-demo__hint {
+          font-family: var(--lk-font-mono);
+          font-size: 0.6875rem;
+          color: var(--lk-ink-subtle);
+        }
+        .login-demo__grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.625rem;
+        }
+        .login-demo__btn {
+          position: relative;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          gap: 2px;
+          padding: 0.625rem 0.5rem;
+          background: var(--lk-bg);
+          border: 1.5px solid var(--lk-border);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: border-color 0.15s, background-color 0.15s, transform 0.15s;
+          font-family: var(--lk-font-body);
+        }
+        .login-demo__btn:hover {
+          border-color: var(--lk-primary);
+          background-color: rgba(27,75,67,.04);
+        }
+        .login-demo__btn--active {
+          border-color: var(--lk-primary);
+          background-color: rgba(27,75,67,.07);
+          transform: scale(1.02);
+        }
+        .login-demo__check {
+          position: absolute; top: 4px; right: 5px;
+          color: var(--lk-primary);
+        }
+        .login-demo__role {
+          font-size: 0.8125rem; font-weight: 600;
+          color: var(--lk-ink);
+        }
+        .login-demo__badge {
+          font-family: var(--lk-font-mono);
+          font-size: 0.625rem;
+          color: var(--lk-ink-subtle);
+          letter-spacing: 0.02em;
+        }
+
+        /* Fields */
+        .login-form { display: flex; flex-direction: column; gap: 1rem; }
+
+        .login-field { display: flex; flex-direction: column; gap: 0.375rem; }
+
+        .login-field__row {
+          display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .login-field__label {
+          font-family: var(--lk-font-body);
+          font-size: 0.8125rem; font-weight: 600;
+          color: var(--lk-ink-muted);
+        }
+
+        .login-field__forgot {
+          font-family: var(--lk-font-body);
+          font-size: 0.8rem; font-weight: 500;
+          color: var(--lk-accent);
+          background: none; border: none; cursor: pointer;
+          padding: 0;
+          transition: color 0.15s;
+        }
+        .login-field__forgot:hover { color: var(--lk-accent-light); }
+
+        .login-field__input {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: #fff;
+          border: 1.5px solid var(--lk-border);
+          border-radius: 8px;
+          font-family: var(--lk-font-body);
+          font-size: 0.9375rem;
+          color: var(--lk-ink);
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .login-field__input::placeholder { color: var(--lk-ink-subtle); opacity: 0.6; }
+        .login-field__input:focus {
+          border-color: var(--lk-primary);
+          box-shadow: 0 0 0 3px rgba(27,75,67,.12);
+        }
+
+        .login-field__pw-wrap { position: relative; }
+        .login-field__input--pw { padding-right: 2.75rem; }
+
+        .login-field__eye {
+          position: absolute; inset-y: 0; right: 0;
+          display: flex; align-items: center;
+          padding: 0 0.875rem;
+          background: none; border: none; cursor: pointer;
+          color: var(--lk-ink-subtle);
+          transition: color 0.15s;
+        }
+        .login-field__eye:hover { color: var(--lk-primary); }
+
+        /* Remember */
+        .login-remember {
+          display: flex; align-items: center; gap: 0.625rem;
+          cursor: pointer; user-select: none;
+        }
+        .login-remember__check {
+          width: 16px; height: 16px;
+          border-radius: 4px;
+          accent-color: var(--lk-primary);
+          cursor: pointer;
+        }
+        .login-remember__label {
+          font-size: 0.875rem; font-weight: 500;
+          color: var(--lk-ink-muted);
+        }
+
+        /* Error */
+        .login-error {
+          display: flex; align-items: flex-start; gap: 0.625rem;
+          padding: 0.75rem 1rem;
+          background: rgba(155,35,53,.07);
+          border: 1px solid rgba(155,35,53,.25);
+          border-radius: 8px;
+          font-size: 0.8125rem; font-weight: 500;
+          color: var(--lk-error);
+          overflow: hidden;
+        }
+        .login-error__icon { flex-shrink: 0; margin-top: 1px; }
+
+        /* Submit */
+        .login-submit {
+          display: flex; align-items: center; justify-content: center;
+          gap: 0.5rem;
+          width: 100%;
+          padding: 0.875rem 1.5rem;
+          margin-top: 0.25rem;
+          background-color: var(--lk-primary);
+          color: #fff;
+          font-family: var(--lk-font-body);
+          font-size: 0.9375rem; font-weight: 600;
+          border: none; border-radius: 8px;
+          cursor: pointer;
+          box-shadow: 0 1px 3px rgba(27,75,67,.25), 0 4px 12px rgba(27,75,67,.18);
+          transition: background-color 0.15s, box-shadow 0.15s, transform 0.12s;
+        }
+        .login-submit:hover:not(:disabled) {
+          background-color: #246059;
+          box-shadow: 0 2px 8px rgba(27,75,67,.3), 0 8px 24px rgba(27,75,67,.18);
+          transform: translateY(-1px);
+        }
+        .login-submit:active:not(:disabled) { transform: translateY(0); }
+        .login-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .login-submit__spinner { animation: spin 0.9s linear infinite; }
+
+        /* Back link */
+        .login-back {
+          margin-top: 1.25rem;
+          text-align: center;
+          font-size: 0.875rem;
+        }
+        .login-back__link {
+          color: var(--lk-ink-subtle);
+          text-decoration: none;
+          transition: color 0.15s;
+        }
+        .login-back__link:hover { color: var(--lk-primary); }
+
+        /* Right foot */
+        .login-right__foot {
+          text-align: center;
+          font-family: var(--lk-font-mono);
+          font-size: 0.6875rem;
+          letter-spacing: 0.03em;
+          color: var(--lk-ink-subtle);
+          padding-top: 1.5rem;
+          border-top: 1px solid var(--lk-border-light);
+          margin-top: 1.5rem;
+        }
+
+        /* ── Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+          .login-submit,
+          .login-field__input,
+          .login-demo__btn,
+          .login-left__dot {
+            transition: none;
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   );
 };
