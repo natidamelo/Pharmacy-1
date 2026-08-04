@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, Suspense, lazy } from 'react';
-import { Link } from 'react-router-dom';
 import amberBottleImg from '../../../assets/amber_bottle.png';
 
 // Lazy-load the 3D bottle so it never blocks the authenticated app bundle
