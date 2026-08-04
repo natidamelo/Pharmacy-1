@@ -140,6 +140,88 @@ const CAPSULES: CapsuleDef[] = [
 ];
 
 /* ─────────────────────────────────────────────────────────── */
+/*  Internal Core X-Ray Reveal Pill                             */
+/* ─────────────────────────────────────────────────────────── */
+const HeroCorePill: React.FC<{ reduced: boolean }> = ({ reduced }) => {
+  const coreRef = useRef<THREE.Group>(null);
+
+  useFrame((_, delta) => {
+    if (!reduced && coreRef.current) {
+      coreRef.current.rotation.z += delta * 0.5;
+      coreRef.current.rotation.y += delta * 0.3;
+    }
+  });
+
+  return (
+    <Float speed={2} rotationIntensity={0.55} floatIntensity={0.8} position={[-0.85, 0.45, 0.6]} rotation={[0.4, 0.3, -0.5]}>
+      <group scale={[0.42, 0.42, 0.42]}>
+        {/* Top Green/Teal Transmission Shell Half */}
+        <mesh position={[0, 0.75, 0]}>
+          <capsuleGeometry args={[0.7, 1, 32, 32]} />
+          <MeshTransmissionMaterial
+            backside
+            samples={16}
+            resolution={512}
+            transmission={0.92}
+            roughness={0.12}
+            thickness={0.5}
+            ior={1.5}
+            color="#1B4B43"
+          />
+        </mesh>
+
+        {/* Bottom White Shell Half */}
+        <mesh position={[0, -0.75, 0]}>
+          <capsuleGeometry args={[0.7, 1, 32, 32]} />
+          <meshPhysicalMaterial
+            color="#ffffff"
+            roughness={0.2}
+            transmission={0.2}
+            thickness={1}
+          />
+        </mesh>
+
+        {/* Animated Internal Core (X-Ray Reveal Effect) */}
+        <group ref={coreRef}>
+          {/* Glowing Central Workflow Core */}
+          <mesh>
+            <icosahedronGeometry args={[0.38, 0]} />
+            <meshStandardMaterial
+              color="#00ffcc"
+              emissive="#00aa88"
+              emissiveIntensity={2}
+              wireframe
+            />
+          </mesh>
+
+          {/* Orbiting Mini Data Particles */}
+          {Array.from({ length: 6 }).map((_, i) => {
+            const angle = (i / 6) * Math.PI * 2;
+            return (
+              <mesh
+                key={i}
+                position={[
+                  Math.cos(angle) * 0.75,
+                  i % 2 === 0 ? 0.25 : -0.25,
+                  Math.sin(angle) * 0.75,
+                ]}
+              >
+                <sphereGeometry args={[0.07, 16, 16]} />
+                <meshStandardMaterial
+                  color="#ffffff"
+                  emissive="#00ffff"
+                  emissiveIntensity={3}
+                />
+              </mesh>
+            );
+          })}
+        </group>
+      </group>
+    </Float>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────── */
 /*  Single floating capsule                                     */
 /* ─────────────────────────────────────────────────────────── */
 const AntiGravityCapsule: React.FC<{ def: CapsuleDef; reduced: boolean }> = ({ def, reduced }) => {
@@ -355,6 +437,9 @@ const BottleScene: React.FC<{
           <meshStandardMaterial color="#1B4B43" side={THREE.FrontSide} />
         </mesh>
       </group>
+
+      {/* ── Featured Anti-Gravity Hero Core Pill with Transmission Shell & Orbiting Data Particles */}
+      <HeroCorePill reduced={reduced} />
 
       {/* ── Anti-gravity floating capsules */}
       {CAPSULES.map((def, i) => (
