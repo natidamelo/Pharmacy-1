@@ -17,9 +17,9 @@ const HeroSection: React.FC = () => {
     const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener('change', onChange);
 
-    const desktopOk = window.innerWidth >= 1024;
+    const desktopOk = window.innerWidth >= 768;
     if (desktopOk) {
-      const t = setTimeout(() => setUse3D(true), 300);
+      const t = setTimeout(() => setUse3D(true), 200);
       return () => { clearTimeout(t); mq.removeEventListener('change', onChange); };
     }
     return () => mq.removeEventListener('change', onChange);
@@ -58,12 +58,27 @@ const HeroSection: React.FC = () => {
 
   return (
     <section className="mkt-hero" ref={heroRef} id="hero" aria-label="Introduction">
-      {/* Background grid texture & ambient glow */}
+      {/* Background texture & ambient glow */}
       <div className="mkt-hero__bg" aria-hidden="true">
         <div className="mkt-hero__bg-grid" />
         <div className="mkt-hero__bg-glow" />
       </div>
 
+      {/* FULL HERO 3D CANVAS VIEWPORT */}
+      <div className="mkt-hero__full-canvas-wrap" aria-hidden="true">
+        {use3D && (
+          <Suspense fallback={<div className="mkt-hero__pill-placeholder" />}>
+            <Bottle3D
+              mouseX={mousePos.x}
+              mouseY={mousePos.y}
+              scrollY={scrollY}
+              reduced={reducedMotion}
+            />
+          </Suspense>
+        )}
+      </div>
+
+      {/* Hero Inner Container (Typography & CTAs) */}
       <div className="mkt-container mkt-hero__inner">
         {/* Left Column: Content & Feature Highlights */}
         <div className="mkt-hero__copy">
@@ -122,24 +137,8 @@ const HeroSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: 3D Capsule Pill & Anchored Glassmorphic Analytics Cards */}
-        <div className="mkt-hero__visual" aria-hidden="true">
-          {/* 3D WebGL Canvas */}
-          <div className="mkt-hero__pill-canvas-wrap">
-            {use3D ? (
-              <Suspense fallback={<div className="mkt-hero__pill-placeholder" />}>
-                <Bottle3D
-                  mouseX={mousePos.x}
-                  mouseY={mousePos.y}
-                  scrollY={scrollY}
-                  reduced={reducedMotion}
-                />
-              </Suspense>
-            ) : (
-              <div className="mkt-hero__pill-placeholder" />
-            )}
-          </div>
-
+        {/* Right Column: Anchored Glassmorphic Analytics Floating Cards */}
+        <div className="mkt-hero__floating-layer" aria-hidden="true">
           {/* Floating Glassmorphic UI Card 1: Monthly Prescriptions Dispensed */}
           <div
             className="mkt-hero__glass-card mkt-hero__glass-card--dispensed"
@@ -209,10 +208,12 @@ const HeroSection: React.FC = () => {
       <style>{`
         .mkt-hero {
           position: relative;
-          min-height: 100svh;
+          min-height: 100vh;
+          width: 100%;
           display: flex;
           align-items: center;
-          padding-top: 72px;
+          padding-top: 100px;
+          padding-bottom: 40px;
           overflow: hidden;
           background-color: var(--mkt-bg, #EEF0EC);
           transition: background-color 0.3s ease;
@@ -222,6 +223,7 @@ const HeroSection: React.FC = () => {
           position: absolute;
           inset: 0;
           pointer-events: none;
+          z-index: 0;
         }
 
         .mkt-hero__bg-grid {
@@ -230,29 +232,45 @@ const HeroSection: React.FC = () => {
           background-image:
             linear-gradient(rgba(13,92,63,0.06) 1px, transparent 1px),
             linear-gradient(90deg, rgba(13,92,63,0.06) 1px, transparent 1px);
-          background-size: 40px 40px;
-          opacity: 0.7;
+          background-size: 44px 44px;
+          opacity: 0.75;
           mask-image: radial-gradient(ellipse 85% 85% at 50% 50%, black 40%, transparent 100%);
         }
 
         .mkt-hero__bg-glow {
           position: absolute;
-          top: 10%;
-          right: 8%;
-          width: 580px;
-          height: 580px;
-          background: radial-gradient(ellipse, rgba(13,92,63,0.15) 0%, transparent 70%);
+          top: 5%;
+          right: 5%;
+          width: 650px;
+          height: 650px;
+          background: radial-gradient(ellipse, rgba(13,92,63,0.16) 0%, transparent 70%);
           border-radius: 50%;
+        }
+
+        /* FULL PAGE HERO 3D CANVAS VIEWPORT */
+        .mkt-hero__full-canvas-wrap {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 1;
+          pointer-events: none;
+        }
+        .mkt-hero__pill-placeholder {
+          width: 100%;
+          height: 100%;
         }
 
         .mkt-hero__inner {
           display: grid;
-          grid-template-columns: 1.1fr 0.9fr;
-          gap: 3rem;
+          grid-template-columns: 1fr 1fr;
+          gap: 2rem;
           align-items: center;
-          padding-block: 3.5rem;
+          width: 100%;
+          max-width: 1320px;
+          margin: 0 auto;
           position: relative;
-          z-index: 2;
+          z-index: 10;
         }
 
         /* Eyebrow */
@@ -274,11 +292,11 @@ const HeroSection: React.FC = () => {
         /* Headline */
         .mkt-hero__headline {
           font-family: 'Inter', system-ui, sans-serif;
-          font-size: clamp(2.5rem, 4.2vw, 3.75rem);
+          font-size: clamp(2.5rem, 4vw, 3.6rem);
           font-weight: 800;
           color: #111827;
           letter-spacing: -0.03em;
-          line-height: 1.15;
+          line-height: 1.16;
           margin-bottom: 1.5rem;
         }
         .mkt-hero__headline-sub {
@@ -291,7 +309,7 @@ const HeroSection: React.FC = () => {
           font-size: 1.0625rem;
           color: #4B5563;
           line-height: 1.6;
-          max-width: 520px;
+          max-width: 500px;
           margin-bottom: 2rem;
         }
 
@@ -351,7 +369,7 @@ const HeroSection: React.FC = () => {
           box-shadow: 0 14px 30px -5px rgba(13,92,63,0.4);
         }
         .mkt-hero__btn-secondary {
-          background: rgba(255,255,255,0.7);
+          background: rgba(255,255,255,0.75);
           backdrop-filter: blur(8px);
           border: 1px solid rgba(209,213,219,0.8);
           color: #1F2937;
@@ -369,33 +387,21 @@ const HeroSection: React.FC = () => {
           transform: translateY(-2px);
         }
 
-        /* Right Visual Column */
-        .mkt-hero__visual {
+        /* Right Floating UI Cards Layer */
+        .mkt-hero__floating-layer {
           position: relative;
           width: 100%;
-          height: 540px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .mkt-hero__pill-canvas-wrap {
-          position: absolute;
-          inset: -40px;
-          z-index: 1;
-        }
-        .mkt-hero__pill-placeholder {
-          width: 100%;
-          height: 100%;
+          height: 520px;
         }
 
         /* Glassmorphic UI Cards */
         .mkt-hero__glass-card {
           position: absolute;
-          z-index: 3;
-          background: rgba(255,255,255,0.65);
+          z-index: 20;
+          background: rgba(255,255,255,0.68);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(255,255,255,0.8);
+          border: 1px solid rgba(255,255,255,0.85);
           border-radius: 18px;
           box-shadow: 0 20px 40px rgba(0,0,0,0.06);
           padding: 1.25rem 1.5rem;
@@ -403,7 +409,7 @@ const HeroSection: React.FC = () => {
         }
 
         .mkt-hero__glass-card--dispensed {
-          top: 14%;
+          top: 10%;
           right: 2%;
           width: 270px;
         }
@@ -453,9 +459,9 @@ const HeroSection: React.FC = () => {
         }
 
         .mkt-hero__glass-card--map {
-          bottom: 14%;
-          right: 4%;
-          width: 270px;
+          bottom: 12%;
+          right: 6%;
+          width: 260px;
           padding: 0;
           overflow: hidden;
         }
@@ -476,8 +482,8 @@ const HeroSection: React.FC = () => {
         /* Badge Tags */
         .mkt-hero__badge-tag {
           position: absolute;
-          z-index: 4;
-          background: rgba(255,255,255,0.75);
+          z-index: 25;
+          background: rgba(255,255,255,0.8);
           backdrop-filter: blur(12px);
           border: 1px solid rgba(255,255,255,0.9);
           padding: 0.5rem 1rem;
@@ -491,16 +497,26 @@ const HeroSection: React.FC = () => {
         }
 
         .mkt-hero__badge-tag--stock {
-          top: 42%;
-          right: 32%;
+          top: 40%;
+          right: 34%;
         }
         .mkt-hero__badge-tag--rx {
-          bottom: 10%;
-          left: 36%;
+          bottom: 8%;
+          left: 30%;
         }
         .mkt-hero__badge-tag--dosage {
-          bottom: 10%;
-          right: 4%;
+          bottom: 8%;
+          right: 6%;
+        }
+
+        /* Responsive layout */
+        @media (max-width: 1024px) {
+          .mkt-hero__inner {
+            grid-template-columns: 1fr;
+          }
+          .mkt-hero__floating-layer {
+            display: none;
+          }
         }
 
         /* Dark mode overrides for Hero section */

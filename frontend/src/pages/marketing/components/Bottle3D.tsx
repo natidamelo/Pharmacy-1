@@ -171,7 +171,7 @@ const MainHeroPill: React.FC<{
     );
 
     // Dynamic scale morph on scroll (slightly expands & tilts forward)
-    const scaleFactor = 1 + progress * 0.22;
+    const scaleFactor = (1 + progress * 0.22) * 0.55;
     pillGroupRef.current.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
     // Internal core rotation
@@ -182,9 +182,9 @@ const MainHeroPill: React.FC<{
   });
 
   return (
-    <group ref={pillGroupRef} position={[0, 0, 0]}>
+    <group ref={pillGroupRef} position={[1.4, 0.1, 0]}>
       <Float speed={reduced ? 0 : 2} rotationIntensity={0.4} floatIntensity={0.6}>
-        <group ref={shellGroupRef} scale={[1.1, 1.1, 1.1]}>
+        <group ref={shellGroupRef} scale={[1.0, 1.0, 1.0]}>
 
           {/* ── Top Translucent Emerald Green Capsule Shell */}
           <mesh position={[0, 1.1, 0]}>
@@ -275,7 +275,7 @@ const MainHeroPill: React.FC<{
 const FloatingMicroCapsule: React.FC<{ def: MicroCapsuleDef; reduced: boolean }> = ({ def, reduced }) => {
   if (reduced) {
     return (
-      <mesh position={def.pos} rotation={def.rot} scale={0.65}>
+      <mesh position={def.pos} rotation={def.rot} scale={0.35}>
         <capsuleGeometry args={[0.12, 0.35, 8, 16]} />
         <meshStandardMaterial color={def.color} roughness={0.2} />
       </mesh>
@@ -291,7 +291,7 @@ const FloatingMicroCapsule: React.FC<{ def: MicroCapsuleDef; reduced: boolean }>
       floatIntensity={def.floatIntensity}
       floatingRange={def.floatRange}
     >
-      <group scale={0.65}>
+      <group scale={0.35}>
         <mesh position={[0, 0.18, 0]}>
           <capsuleGeometry args={[0.12, 0.2, 8, 16]} />
           <meshStandardMaterial color={def.capColor} roughness={0.15} metalness={0.1} />
@@ -326,7 +326,7 @@ const Bottle3D: React.FC<Bottle3DProps> = ({ mouseX, mouseY, scrollY, reduced = 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 480, position: 'relative' }}>
       <Canvas
-        camera={{ position: [0, 0, 5.8], fov: 42 }}
+        camera={{ position: [0, 0, 6.2], fov: 42 }}
         style={{ width: '100%', height: '100%' }}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
